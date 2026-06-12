@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0C120D" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Valley Almanac — Bloomburrow Standard</title>
+<link rel="preconnect" href="https://api.scryfall.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0C120D; --surface:#141C15; --raised:#1B2620; --line:#243029;
+    --text:#EAE3D2; --muted:#8B967F; --amber:#E8A94B; --amber-dim:#9C7434;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    min-height:100vh; color:var(--text);
+    background:radial-gradient(120% 50% at 50% -5%, rgba(232,169,75,.07), transparent 60%), var(--bg);
+    font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:460px; margin:0 auto; padding:0 16px;}
+  header{padding:26px 2px 14px; text-align:center;}
+  .eyebrow{font-size:11px; letter-spacing:.22em; color:var(--amber); text-transform:uppercase; font-weight:600;}
+  h1{font-family:'Cormorant Garamond', Georgia, serif; font-size:34px; font-weight:700; margin:4px 0 2px; letter-spacing:.01em;}
+  .tagline{font-size:13px; color:var(--muted);}
+
+  .tiers{display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:4px; gap:4px;}
+  .tiers button{min-height:46px; border-radius:9px; border:none; cursor:pointer; background:transparent; color:var(--muted); transition:background .15s;}
+  .tiers button.on{background:var(--raised); box-shadow:inset 0 0 0 1px var(--amber-dim); color:var(--text);}
+  .tiers .t-label{font-size:15px; font-weight:700;}
+  .tiers .t-sub{font-size:10.5px; color:var(--muted);}
+  .tiers button.on .t-sub{color:var(--amber);}
+
+  .chips{display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:14px 2px 4px; scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chips button{flex-shrink:0; display:flex; align-items:center; gap:7px; min-height:40px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .chips button.on{border-color:var(--amber-dim); background:var(--raised); color:var(--text);}
+
+  .deck{margin-top:12px; background:var(--surface); border:1px solid var(--line); border-radius:18px; overflow:hidden;}
+  .ribbon{height:4px;}
+  .deck-head{padding:18px 18px 6px;}
+  .deck-title-row{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  h2{font-family:'Cormorant Garamond', Georgia, serif; font-size:27px; font-weight:700; margin:0; line-height:1.1;}
+  .archetype{font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--amber); font-weight:600; margin:5px 0 10px;}
+  .summary{font-size:14.5px; line-height:1.55; margin:0;}
+  .plan{font-size:13px; line-height:1.5; color:var(--muted); margin:10px 0 6px; font-style:italic;}
+  .fetch-note{font-size:12px; color:var(--amber-dim); padding:4px 0;}
+
+  .lists{padding:4px 8px 14px;}
+  .sec{margin-top:10px;}
+  .sec-head{display:flex; justify-content:space-between; padding:0 10px 6px; font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+  .sec-body{background:var(--raised); border-radius:12px; border:1px solid var(--line); overflow:hidden;}
+  .row{display:flex; align-items:center; width:100%; gap:10px; min-height:46px; padding:0 12px; background:transparent; border:none; border-top:1px solid var(--line); color:var(--text); cursor:pointer; text-align:left; font-family:inherit;}
+  .row:first-child{border-top:none;}
+  .row:active{background:rgba(232,169,75,.06);}
+  .qty{width:26px; font-size:13px; font-weight:700; color:var(--amber); flex-shrink:0; font-variant-numeric:tabular-nums;}
+  .cname{flex:1; font-size:15px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pips{display:inline-flex; gap:3px; flex-shrink:0;}
+
+  .pip{width:17px; height:17px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; box-shadow:inset 0 -1px 1px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.4); line-height:1; user-select:none;}
+  .pip.sm{width:14px; height:14px; font-size:8.5px; vertical-align:-2px;}
+  .dot{border-radius:50%; box-shadow:0 0 0 1px rgba(0,0,0,.5), inset 0 -1px 1px rgba(0,0,0,.3); display:inline-block;}
+
+  footer{text-align:center; font-size:11.5px; color:var(--muted); padding:18px 10px 30px; line-height:1.6;}
+
+  /* bottom sheet */
+  .overlay{position:fixed; inset:0; z-index:50; background:rgba(5,9,6,.78); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; animation:fade .18s ease;}
+  .sheet{width:100%; max-width:430px; background:var(--surface); border-radius:20px 20px 0 0; border:1px solid var(--line); border-bottom:none; padding:10px 18px calc(20px + env(safe-area-inset-bottom)); animation:up .24s cubic-bezier(.32,.72,.32,1);}
+  .grab{width:38px; height:4px; border-radius:2px; background:var(--line); margin:4px auto 12px;}
+  .img-box{border-radius:14px; overflow:hidden; aspect-ratio:488/680; max-height:62vh; margin:0 auto; max-width:330px; display:flex; align-items:center; justify-content:center; background:var(--raised);}
+  .img-box img{width:100%; height:100%; object-fit:contain; display:block;}
+  .spin{width:26px; height:26px; border-radius:50%; border:2.5px solid var(--line); border-top-color:var(--amber); animation:spin .8s linear infinite; margin:0 auto 10px;}
+  .center-note{color:var(--muted); font-size:13px; text-align:center; padding:24px; line-height:1.5;}
+  .close-btn{margin-top:16px; width:100%; min-height:46px; border-radius:12px; border:1px solid var(--line); background:var(--raised); color:var(--text); font-size:16px; font-weight:600; cursor:pointer; font-family:inherit;}
+
+  /* rendered-card fallback */
+  .rc{width:100%; border-radius:14px; padding:14px; border:2px solid var(--rc, #8E8878); background:linear-gradient(180deg, color-mix(in srgb, var(--rc) 16%, transparent), transparent 90px), var(--raised); box-shadow:0 0 24px color-mix(in srgb, var(--rc) 14%, transparent);}
+  .rc-head{display:flex; justify-content:space-between; align-items:center; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .rc-name{font-family:'Cormorant Garamond', Georgia, serif; font-size:19px; font-weight:700; line-height:1.15; min-width:0;}
+  .rc-type{font-size:12px; color:var(--muted); padding:7px 0; font-weight:600;}
+  .rc-text{background:rgba(0,0,0,.22); border-radius:9px; padding:10px 12px; max-height:34vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .rc-text p{margin:0 0 7px; font-size:13.5px; line-height:1.5;}
+  .rc-text p:last-child{margin-bottom:0;}
+  .rc-flavor{font-style:italic; color:var(--muted); font-size:12.5px !important;}
+  .rc-foot{display:flex; justify-content:space-between; align-items:center; padding-top:10px;}
+  .rc-rarity{font-size:11px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--muted);}
+  .rc-rarity.rare{color:var(--amber);} .rc-rarity.mythic{color:#D96E34;}
+  .rc-pt{font-size:16px; font-weight:800; padding:2px 10px; border-radius:8px; border:1.5px solid var(--rc, #8E8878); background:rgba(0,0,0,.3); font-variant-numeric:tabular-nums;}
+
+  @keyframes up{from{transform:translateY(40px); opacity:.6} to{transform:none; opacity:1}}
+  @keyframes fade{from{opacity:0} to{opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Bloomburrow · Standard</div>
+    <h1>Valley Almanac</h1>
+    <div class="tagline">Fourteen decks from a single set — every card is BLB.</div>
+  </header>
+  <div class="tiers" id="tiers"></div>
+  <div class="chips" id="chips"></div>
+  <section class="deck" id="deck"></section>
+  <footer>
+    Standard-legal as of June 2026 — Heartfire Hero (banned) excluded.<br/>
+    Tap any card to view it. Data &amp; images via Scryfall.
+  </footer>
+</div>
+<div id="modal"></div>
+
+<script>
+/* ───────────────────────── data ───────────────────────── */
+const PIP = {
+  W:{bg:'#EDE6C8',fg:'#3B392B'}, U:{bg:'#2E6FA3',fg:'#EAF3FA'},
+  B:{bg:'#46394F',fg:'#E8DEF0'}, R:{bg:'#B5452E',fg:'#FBEDE7'},
+  G:{bg:'#3E7A45',fg:'#EAF5EB'}, C:{bg:'#9A937F',fg:'#26231B'},
+};
+const FRAME = {W:'#CBC39E',U:'#3A719F',B:'#564B5E',R:'#A8492F',G:'#41784A',GOLD:'#B9933F',C:'#8E8878'};
+const TIERS = [
+  {key:'mono', label:'Mono', sub:'5 decks'},
+  {key:'dual', label:'Dual', sub:'6 decks'},
+  {key:'tri',  label:'Tri',  sub:'3 decks'},
+];
+
+const DECKS = [
+/* ───── MONO ───── */
+{ id:'mono-r', tier:'mono', name:'Emberheart Rush', colors:['R'], archetype:'Valiant Mice Aggro',
+  summary:"The fastest thing in Valley. One- and two-drop mice flood the board, then Manifold Mouse and Might of the Meek target them to stack valiant triggers — Emberheart Challenger refuels your hand while Flowerfoot Swordmaster anthems the squad. Sunspine Lynx punishes greedy mana bases and lifegain.",
+  plan:"Curve out turns 1–3, target your own mice every turn, close by turn 5.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Hired Claw'],[4,'Kindlespark Duo'],[4,'Manifold Mouse'],[4,'Emberheart Challenger'],[4,'Flowerfoot Swordmaster'],[3,'Sunspine Lynx'],[2,'Stormsplitter']]},
+    {title:'Spells', cards:[[4,'Might of the Meek'],[4,'Blooming Blast'],[2,'Season of the Bold']]},
+    {title:'Lands', cards:[[4,'Rockface Village'],[21,'Mountain','basic']]},
+  ]},
+{ id:'mono-w', tier:'mono', name:'Lifecreed Vigil', colors:['W'], archetype:'Lifegain & Tokens',
+  summary:"A resilient white midrange shell. Lifecreed Duo and Beza gain life in chunks while Essence Channeler converts every point into +1/+1 counters. Hop to It and Warren Warleader go wide, and Caretaker's Talent turns each token into a fresh card.",
+  plan:"Gain life early, bank counters on Channeler, grind value until the rabbits overwhelm.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Brave-Kin Duo'],[4,'Lifecreed Duo'],[4,'Essence Channeler'],[4,'Burrowguard Mentor'],[3,'Driftgloom Coyote'],[3,'Warren Warleader'],[3,'Beza, the Bounding Spring']]},
+    {title:'Spells', cards:[[3,"Caretaker's Talent"],[3,'Hop to It'],[3,'Parting Gust'],[2,'Dewdrop Cure']]},
+    {title:'Lands', cards:[[4,'Lupinflower Village'],[20,'Plains','basic']]},
+  ]},
+{ id:'mono-b', tier:'mono', name:'Feathers of Night', colors:['B'], archetype:'Midnight Control',
+  summary:"Trade one-for-one with Bloomburrow's deep black removal suite — Fell, Feed the Cycle, Savor — strip hands with Psychic Whorl, then land a Calamity Beast. Maha, Its Feathers Night blanks opposing toughness while Rottenmouth Viper's blight counters end the game on its own.",
+  plan:"Kill everything that moves, then let Maha and the Viper finish in two swings.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Starscape Cleric'],[4,'Darkstar Augur'],[3,'Persistent Marshstalker'],[3,'Iridescent Vinelasher'],[2,'Rottenmouth Viper'],[2,'Maha, Its Feathers Night']]},
+    {title:'Spells', cards:[[4,'Fell'],[4,'Feed the Cycle'],[3,'Savor'],[3,'Psychic Whorl'],[2,'Consumed by Greed'],[2,'Season of Loss']]},
+    {title:'Lands', cards:[[24,'Swamp','basic']]},
+  ]},
+{ id:'mono-u', tier:'mono', name:'Riverwise Tempo', colors:['U'], archetype:'Otter Spells-Matter',
+  summary:"Classic blue tempo with an otter twist. Kitsa, Otterball Elite copies your cheap spells while Stormchaser's Talent rebuys them. Into the Flood Maw and Dazzling Denial keep the board honest, and Eddymurk Crab flashes in as a brutal end-of-turn tap-down.",
+  plan:"Hold up interaction, untap Kitsa with cheap spells, win the long game on card quality.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Kitsa, Otterball Elite'],[4,'Bellowing Crier'],[4,'Daring Waverider'],[3,'Eddymurk Crab'],[2,'Mockingbird']]},
+    {title:'Spells', cards:[[4,"Stormchaser's Talent"],[4,'Into the Flood Maw'],[3,'Dazzling Denial'],[3,"Long River's Pull"],[3,'Spellgyre'],[2,'Season of Weaving']]},
+    {title:'Lands', cards:[[4,'Mudflat Village'],[20,'Island','basic']]},
+  ]},
+{ id:'mono-g', tier:'mono', name:'Bellow of the Woods', colors:['G'], archetype:'Stompy Ramp',
+  summary:"Ramp hard with Three Tree Rootweaver and Clifftop Lookout into Valley's biggest bodies. Innkeeper's Talent grows everything it touches, Galewind Moose hits like a truck with reach, and Lumra returns every land from your graveyard for a backbreaking late game.",
+  plan:"Ramp turns 1–3, deploy oversized threats turns 4+, Lumra resets any board stall.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Three Tree Rootweaver'],[4,'Clifftop Lookout'],[4,'Bushy Bodyguard'],[3,'Brambleguard Veteran'],[3,'Galewind Moose'],[3,'Long River Lurker'],[2,'Fecund Greenshell'],[2,'Lumra, Bellow of the Woods']]},
+    {title:'Spells', cards:[[3,"Innkeeper's Talent"],[3,"Hunter's Talent"],[2,'Pawpatch Formation'],[2,'Season of Gathering']]},
+    {title:'Lands', cards:[[4,'Lilypad Village'],[21,'Forest','basic']]},
+  ]},
+/* ───── DUAL ───── */
+{ id:'dual-rw', tier:'dual', name:"Mabel's Vanguard", colors:['R','W'], archetype:'Boros Valiant Mice',
+  summary:"The premier mice typal deck. Mabel, Heir to Cragflame anthems the whole brigade and forges Cragflame itself, while Manifold Mouse grants double strike to whatever Flowerfoot Swordmaster just pumped. Every targeted spell triggers valiant for free value.",
+  plan:"Deploy mice, target them every turn, swing wide with Mabel's anthem online.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Brave-Kin Duo'],[4,'Manifold Mouse'],[4,'Emberheart Challenger'],[4,'Flowerfoot Swordmaster'],[4,'Kindlespark Duo'],[3,'Mabel, Heir to Cragflame'],[3,'Valley Questcaller']]},
+    {title:'Spells', cards:[[4,'Might of the Meek'],[4,'Blooming Blast'],[4,'Parting Gust']]},
+    {title:'Lands', cards:[[4,'Wind-Scarred Crag'],[4,'Rockface Village'],[7,'Mountain','basic'],[7,'Plains','basic']]},
+  ]},
+{ id:'dual-wb', tier:'dual', name:'Cosmos Communion', colors:['W','B'], archetype:'Orzhov Bats Lifegain',
+  summary:"Bats drain in the dark. Starscape Cleric and Moonrise Cleric bleed opponents on every flap, Essence Channeler hoards counters from each life gained, and Zoraline, Cosmos Caller rebuys fallen bats while converting life into pressure. Maha looms as the night's final word.",
+  plan:"Chip with evasive bats, drain in increments, Zoraline keeps the colony airborne.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Starscape Cleric'],[4,'Lifecreed Duo'],[4,'Moonrise Cleric'],[4,'Essence Channeler'],[3,'Darkstar Augur'],[3,'Zoraline, Cosmos Caller'],[2,'Maha, Its Feathers Night']]},
+    {title:'Spells', cards:[[4,'Fell'],[3,'Feed the Cycle'],[3,'Savor'],[2,'Dewdrop Cure']]},
+    {title:'Lands', cards:[[4,'Scoured Barrens'],[4,'Lupinflower Village'],[8,'Swamp','basic'],[8,'Plains','basic']]},
+  ]},
+{ id:'dual-ur', tier:'dual', name:'Crackling Wit', colors:['U','R'], archetype:'Izzet Otter Spellslinger',
+  summary:"Cast, copy, repeat. Kitsa and Stormchaser's Talent generate relentless spell velocity, Stormsplitter clones itself with every instant, and Brazen Collector grows alongside the storm. Ral, Crackling Wit sits on top drawing cards and hurling lightning.",
+  plan:"Chain cheap spells for tempo, then one big Stormsplitter turn ends it.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Kitsa, Otterball Elite'],[4,'Brazen Collector'],[4,'Daring Waverider'],[3,'Harnesser of Storms'],[3,'Stormsplitter']]},
+    {title:'Spells', cards:[[2,'Ral, Crackling Wit'],[4,"Stormchaser's Talent"],[4,'Into the Flood Maw'],[4,'Might of the Meek'],[2,'Dazzling Denial'],[2,'Festival of Embers']]},
+    {title:'Lands', cards:[[4,'Swiftwater Cliffs'],[4,'Rockface Village'],[8,'Island','basic'],[8,'Mountain','basic']]},
+  ]},
+{ id:'dual-bg', tier:'dual', name:"Seedmiser's Feast", colors:['B','G'], archetype:'Golgari Squirrel Food',
+  summary:"Forage, sacrifice, multiply. Camellia, the Seedmiser turns every Food into another squirrel and pumps the swarm, Scavenger's Talent keeps the pantry stocked, and Ygra, Eater of All literally turns every creature into Food — a devastating combo with Camellia's sac outlet.",
+  plan:"Stockpile Food, swarm with squirrels, Ygra converts the whole table into dinner.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Curious Forager'],[4,'Bushy Bodyguard'],[4,'Camellia, the Seedmiser'],[3,"Hazel's Brewmaster"],[3,'Bristlebud Farmer'],[2,'Ygra, Eater of All']]},
+    {title:'Spells', cards:[[4,"Scavenger's Talent"],[4,'Fell'],[3,'Feed the Cycle'],[3,"Hunter's Talent"],[2,"Innkeeper's Talent"]]},
+    {title:'Lands', cards:[[4,'Jungle Hollow'],[4,'Lilypad Village'],[8,'Forest','basic'],[8,'Swamp','basic']]},
+  ]},
+{ id:'dual-gu', tier:'dual', name:'Pondside Prophets', colors:['G','U'], archetype:'Simic Frog Tempo',
+  summary:"Frogs that never stop generating value. Pond Prophet cantrips, Lilysplash Mentor blinks your best enters-the-battlefield triggers, and Clement, the Worrywort untaps lands to hold up interaction. Helga, Skittish Seer scales the late game into massive card advantage.",
+  plan:"Develop and draw simultaneously, blink ETBs for value, Helga snowballs the endgame.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Pond Prophet'],[4,'Clifftop Lookout'],[4,'Lilysplash Mentor'],[3,'Clement, the Worrywort'],[3,'Long River Lurker'],[3,'Eddymurk Crab'],[2,'Fecund Greenshell'],[2,'Helga, Skittish Seer']]},
+    {title:'Spells', cards:[[4,'Into the Flood Maw'],[3,"Long River's Pull"],[2,'Dazzling Denial'],[2,'Season of Weaving']]},
+    {title:'Lands', cards:[[4,'Thornwood Falls'],[4,'Lilypad Village'],[8,'Forest','basic'],[8,'Island','basic']]},
+  ]},
+{ id:'dual-br', tier:'dual', name:'Scaled Scorch', colors:['B','R'], archetype:'Rakdos Lizard Aggro',
+  summary:"Relentless damage from cold blood. Gev, Scaled Scorch grows with every black spell and makes your lizards uncounterable, Hired Claw scales early pressure, and Fireglass Mentor punishes blockers. A deep removal suite clears the path while Rottenmouth Viper closes.",
+  plan:"Aggressive starts backed by removal — Gev turns every kill spell into +1/+1 counters.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Hired Claw'],[4,'Flamecache Gecko'],[4,'Fireglass Mentor'],[3,'Gev, Scaled Scorch'],[3,'Brazen Collector'],[3,'Iridescent Vinelasher'],[2,'Rottenmouth Viper']]},
+    {title:'Spells', cards:[[4,'Fell'],[4,'Blooming Blast'],[3,'Might of the Meek'],[3,'Feed the Cycle']]},
+    {title:'Lands', cards:[[4,'Bloodfell Caves'],[4,'Rockface Village'],[8,'Mountain','basic'],[7,'Swamp','basic']]},
+  ]},
+/* ───── TRI ───── */
+{ id:'tri-naya', tier:'tri', name:"Baylen's Muster", colors:['R','G','W'], archetype:'Naya Token Swarm',
+  summary:"The whole Valley answers the call. Hop to It, Head of the Homestead, and Warren Warleader flood the field with rabbits, Caretaker's Talent draws a card for every wave, and Baylen, the Haymaker converts three tapped tokens into mana, cards, or a lethal overrun.",
+  plan:"Go wide fast, draw through Caretaker's, Baylen's overrun ability seals the game.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Brave-Kin Duo'],[4,'Pawpatch Recruit'],[4,'Burrowguard Mentor'],[3,'Head of the Homestead'],[3,'Warren Warleader'],[3,'Baylen, the Haymaker'],[2,'Finneas, Ace Archer']]},
+    {title:'Spells', cards:[[4,'Hop to It'],[3,"Caretaker's Talent"],[3,'Parting Gust'],[2,'Season of the Burrow']]},
+    {title:'Lands', cards:[[4,'Blossoming Sands'],[3,'Wind-Scarred Crag'],[3,'Rugged Highlands'],[2,'Fountainport'],[7,'Plains','basic'],[4,'Forest','basic'],[2,'Mountain','basic']]},
+  ]},
+{ id:'tri-bant', tier:'tri', name:'Skittish Council', colors:['G','W','U'], archetype:'Bant Toughness Value',
+  summary:"Big behinds, bigger brains. Helga, Skittish Seer and Fecund Greenshell reward high-toughness creatures with cards and mana, Beza refills life and board, and Eddymurk Crab locks down attackers. A wall of value that out-grinds every fair deck in the format.",
+  plan:"Stabilize behind huge toughness, chain card advantage, win with Greenshell beats.",
+  sections:[
+    {title:'Creatures', cards:[[4,'Pond Prophet'],[4,'Clifftop Lookout'],[3,'Lilysplash Mentor'],[3,'Eddymurk Crab'],[3,'Helga, Skittish Seer'],[3,'Beza, the Bounding Spring'],[2,'Fecund Greenshell'],[2,'Lumra, Bellow of the Woods']]},
+    {title:'Spells', cards:[[4,'Into the Flood Maw'],[3,'Parting Gust'],[3,'Dazzling Denial'],[2,'Season of Weaving']]},
+    {title:'Lands', cards:[[4,'Tranquil Cove'],[4,'Blossoming Sands'],[3,'Thornwood Falls'],[2,'Fountainport'],[4,'Forest','basic'],[4,'Island','basic'],[3,'Plains','basic']]},
+  ]},
+{ id:'tri-grixis', tier:'tri', name:'Night of Calamity', colors:['U','B','R'], archetype:'Grixis Calamity Control',
+  summary:"Channel the Calamity Beasts themselves. A dense suite of removal, discard, and counters dismantles the opponent's plan while Ral, Crackling Wit accrues advantage. Maha darkens the sky, Vren raises a rat horde from every casualty, and Rottenmouth Viper ends negotiations.",
+  plan:"Answer everything for five turns, then take over with planeswalker loyalty and Calamity top-end.",
+  sections:[
+    {title:'Creatures', cards:[[3,'Darkstar Augur'],[3,'Gev, Scaled Scorch'],[2,'Vren, the Relentless'],[2,'Stormsplitter'],[2,'Rottenmouth Viper'],[2,'Maha, Its Feathers Night']]},
+    {title:'Spells', cards:[[2,'Ral, Crackling Wit'],[4,'Fell'],[4,'Feed the Cycle'],[4,'Into the Flood Maw'],[3,'Psychic Whorl'],[3,'Savor'],[2,'Spellgyre'],[2,'Season of Loss']]},
+    {title:'Lands', cards:[[4,'Dismal Backwater'],[4,'Bloodfell Caves'],[3,'Swiftwater Cliffs'],[4,'Fabled Passage'],[3,'Swamp','basic'],[2,'Island','basic'],[2,'Mountain','basic']]},
+  ]},
+];
+
+/* ───────────────────────── state + scryfall ───────────────────────── */
+const cache = {};               // norm(name) -> card entry
+let state = { tier:'mono', deckId:'mono-r' };
+const norm = s => s.toLowerCase().trim();
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function storeCard(card, aliasName){
+  const face = card.card_faces && card.card_faces[0];
+  const pick = k => card[k] || (face && face[k]) || '';
+  const entry = {
+    cost: pick('mana_cost'),
+    type: pick('type_line'),
+    oracle: pick('oracle_text'),
+    flavor: pick('flavor_text'),
+    power: pick('power'), toughness: pick('toughness'), loyalty: pick('loyalty'),
+    rarity: card.rarity || '',
+    colors: (card.colors && card.colors.length ? card.colors : null) || (face && face.colors) || card.color_identity || [],
+    actualName: card.name,
+  };
+  cache[norm(card.name)] = entry;
+  if (card.name.includes(' // ')) cache[norm(card.name.split(' // ')[0])] = entry;
+  if (aliasName) cache[norm(aliasName)] = entry;
+}
+
+async function loadDeckData(deck){
+  const names = deck.sections.flatMap(s => s.cards.map(c => c[1]));
+  const need = [...new Set(names)].filter(n => !cache[norm(n)]);
+  if (!need.length) return;
+  document.getElementById('fetchNote') && (document.getElementById('fetchNote').style.display = 'block');
+  try {
+    for (let i = 0; i < need.length; i += 70){
+      const chunk = need.slice(i, i + 70);
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ identifiers: chunk.map(name => ({name})) }),
+      });
+      const json = await res.json();
+      (json.data || []).forEach(c => storeCard(c));
+      for (const nf of (json.not_found || [])){
+        try {
+          const r = await fetch('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(nf.name));
+          if (r.ok) storeCard(await r.json(), nf.name);
+        } catch(e){}
+      }
+    }
+  } catch(e){ /* offline — names render without pips */ }
+  renderDeck(); // refresh pips
+}
+
+/* ───────────────────────── rendering ───────────────────────── */
+function pipHTML(sym, small){
+  const cls = 'pip' + (small ? ' sm' : '');
+  if (sym === 'T') return `<span class="${cls}" style="background:${PIP.C.bg};color:${PIP.C.fg}">↷</span>`;
+  if (sym.includes('/')){
+    const [a,b] = sym.split('/');
+    const pa = PIP[a] || PIP.C, pb = PIP[b] || PIP.C;
+    return `<span class="${cls}" style="background:linear-gradient(135deg, ${pa.bg} 50%, ${pb.bg} 50%);color:#1d1c16;font-size:${small?7:8}px">${esc(sym.replace('/',''))}</span>`;
+  }
+  const colored = PIP[sym] && isNaN(sym);
+  const p = colored ? PIP[sym] : PIP.C;
+  return `<span class="${cls}" style="background:${p.bg};color:${p.fg}">${esc(sym)}</span>`;
+}
+function costHTML(cost, small){
+  if (!cost) return '';
+  const syms = [...cost.matchAll(/\{([^}]+)\}/g)].map(m => m[1]);
+  return `<span class="pips">${syms.map(s => pipHTML(s, small)).join('')}</span>`;
+}
+function dotsHTML(colors, size){
+  return `<span style="display:inline-flex;gap:4px">${colors.map(c =>
+    `<span class="dot" style="width:${size}px;height:${size}px;background:${PIP[c].bg}"></span>`).join('')}</span>`;
+}
+function oracleHTML(text){
+  if (!text) return '';
+  return text.split('\n').map(line =>
+    '<p>' + line.split(/(\{[^}]+\})/g).map(part => {
+      const m = part.match(/^\{([^}]+)\}$/);
+      return m ? pipHTML(m[1], true) : esc(part);
+    }).join('') + '</p>'
+  ).join('');
+}
+
+function renderTiers(){
+  document.getElementById('tiers').innerHTML = TIERS.map(t => `
+    <button class="${state.tier === t.key ? 'on' : ''}" data-tier="${t.key}">
+      <div class="t-label">${t.label}</div><div class="t-sub">${t.sub}</div>
+    </button>`).join('');
+}
+function renderChips(){
+  const tierDecks = DECKS.filter(d => d.tier === state.tier);
+  document.getElementById('chips').innerHTML = tierDecks.map(d => `
+    <button class="${d.id === state.deckId ? 'on' : ''}" data-deck="${d.id}">
+      ${dotsHTML(d.colors, 9)} ${esc(d.name)}
+    </button>`).join('');
+}
+function renderDeck(){
+  const deck = DECKS.find(d => d.id === state.deckId);
+  const total = deck.sections.reduce((a,s) => a + s.cards.reduce((b,c) => b + c[0], 0), 0);
+  const ribbon = deck.colors.length === 1 ? PIP[deck.colors[0]].bg
+    : `linear-gradient(90deg, ${deck.colors.map(c => PIP[c].bg).join(', ')})`;
+  const anyMissing = deck.sections.some(s => s.cards.some(c => !c[2] && !cache[norm(c[1])]));
+  document.getElementById('deck').innerHTML = `
+    <div class="ribbon" style="background:${ribbon}"></div>
+    <div class="deck-head">
+      <div class="deck-title-row"><h2>${esc(deck.name)}</h2>${dotsHTML(deck.colors, 13)}</div>
+      <div class="archetype">${esc(deck.archetype)} · ${total} cards</div>
+      <p class="summary">${esc(deck.summary)}</p>
+      <p class="plan">Game plan: ${esc(deck.plan)}</p>
+      <div class="fetch-note" id="fetchNote" style="display:${anyMissing ? 'block' : 'none'}">Fetching mana costs from Scryfall…</div>
+    </div>
+    <div class="lists">
+      ${deck.sections.map(sec => {
+        const count = sec.cards.reduce((a,c) => a + c[0], 0);
+        return `<div class="sec">
+          <div class="sec-head"><span>${esc(sec.title)}</span><span>${count}</span></div>
+          <div class="sec-body">
+            ${sec.cards.map(c => {
+              const data = cache[norm(c[1])];
+              return `<button class="row" data-card="${esc(c[1])}">
+                <span class="qty">${c[0]}×</span>
+                <span class="cname">${esc(c[1])}</span>
+                ${!c[2] && data ? costHTML(data.cost) : ''}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function renderAll(){ renderTiers(); renderChips(); renderDeck(); loadDeckData(DECKS.find(d => d.id === state.deckId)); }
+
+/* ───────────────────────── card popup ───────────────────────── */
+function frameColor(card){
+  const cols = (card && card.colors) || [];
+  if (cols.length > 1) return FRAME.GOLD;
+  if (cols.length === 1) return FRAME[cols[0]] || FRAME.C;
+  return FRAME.C;
+}
+function renderedCardHTML(card, name){
+  const frame = frameColor(card);
+  const pt = (card.power !== '' && card.toughness !== '') ? `${esc(card.power)}/${esc(card.toughness)}`
+    : card.loyalty ? `Loyalty ${esc(card.loyalty)}` : null;
+  const rcls = card.rarity === 'mythic' ? 'mythic' : card.rarity === 'rare' ? 'rare' : '';
+  return `<div class="rc" style="--rc:${frame}">
+    <div class="rc-head">
+      <div class="rc-name">${esc(card.actualName || name)}</div>
+      ${costHTML(card.cost)}
+    </div>
+    <div class="rc-type">${esc(card.type)}</div>
+    <div class="rc-text">
+      ${oracleHTML(card.oracle)}
+      ${card.flavor ? `<p class="rc-flavor">${esc(card.flavor)}</p>` : ''}
+    </div>
+    <div class="rc-foot">
+      <span class="rc-rarity ${rcls}">${card.rarity ? esc(card.rarity) + ' · ' : ''}Bloomburrow</span>
+      ${pt ? `<span class="rc-pt">${pt}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function openCard(name){
+  const modal = document.getElementById('modal');
+  const imgUrl = 'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name) + '&format=image&version=normal';
+  modal.innerHTML = `
+    <div class="overlay" id="ov">
+      <div class="sheet" id="sheetBody">
+        <div class="grab"></div>
+        <div id="sheetContent">
+          <div class="img-box"><div class="center-note"><div class="spin"></div>Consulting the almanac…</div></div>
+        </div>
+        <button class="close-btn" id="closeBtn">Close</button>
+      </div>
+    </div>`;
+  document.body.style.overflow = 'hidden';
+  const close = () => { modal.innerHTML = ''; document.body.style.overflow = ''; };
+  document.getElementById('ov').addEventListener('click', close);
+  document.getElementById('sheetBody').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('closeBtn').addEventListener('click', close);
+
+  // ensure full card data for the fallback view
+  let data = cache[norm(name)];
+  if (!data){
+    try {
+      const r = await fetch('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name));
+      if (r.ok){ const json = await r.json(); storeCard(json, name); data = cache[norm(name)]; }
+    } catch(e){}
+  }
+
+  const content = document.getElementById('sheetContent');
+  if (!content) return; // closed before load finished
+
+  const img = new Image();
+  img.alt = name;
+  img.onload = () => {
+    const c = document.getElementById('sheetContent');
+    if (!c) return;
+    c.innerHTML = '<div class="img-box"></div>';
+    c.querySelector('.img-box').appendChild(img);
+  };
+  img.onerror = () => {
+    const c = document.getElementById('sheetContent');
+    if (!c) return;
+    c.innerHTML = data ? renderedCardHTML(data, name)
+      : '<div class="center-note" style="min-height:180px;display:flex;align-items:center;justify-content:center">Couldn\u2019t reach the card archives.<br/>Check your connection and tap the card again.</div>';
+  };
+  img.src = imgUrl;
+}
+
+/* ───────────────────────── events ───────────────────────── */
+document.addEventListener('click', e => {
+  const tierBtn = e.target.closest('[data-tier]');
+  if (tierBtn){
+    state.tier = tierBtn.dataset.tier;
+    state.deckId = DECKS.find(d => d.tier === state.tier).id;
+    renderAll(); return;
+  }
+  const deckBtn = e.target.closest('[data-deck]');
+  if (deckBtn){ state.deckId = deckBtn.dataset.deck; renderChips(); renderDeck(); loadDeckData(DECKS.find(d => d.id === state.deckId)); return; }
+  const cardBtn = e.target.closest('[data-card]');
+  if (cardBtn){ openCard(cardBtn.dataset.card); }
+});
+
+renderAll();
+</script>
+</body>
+</html>
