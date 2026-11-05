@@ -203,6 +203,15 @@
   .draft .t.cur{color:var(--amber);}
   .draft button{min-height:36px; padding:0 10px; border-radius:9px; border:1px solid var(--line); background:var(--raised); font-size:12.5px; cursor:pointer;}
   .summary{font-size:13px; line-height:1.6; color:var(--muted);} .summary b{color:var(--text); font-weight:600;}
+  .opt .cnt{color:var(--muted); font-size:11.5px; margin-top:1px;}
+  .opt .cnt .ld{opacity:.55;}
+  .opt.zero{opacity:.38;} .opt.zero .t{text-decoration:line-through; text-decoration-color:var(--muted);}
+  .opt.zero .cnt{text-decoration:none; color:var(--red);}
+  .opt.zero-on .cnt{color:var(--red);}
+  .facetnote{font-size:11.5px; color:var(--muted); margin-top:6px; line-height:1.4;}
+  .facetnote b{color:var(--text); font-weight:600;}
+  .chip.warn{border-color:var(--red); background:#2a1510;}
+  .chip .zc{font-size:11px; color:#F2A493; margin-left:2px;}
   footer{text-align:center; font-size:11.5px; color:var(--muted); padding:18px 10px; line-height:1.6;}
   footer a{color:var(--muted);}
   [hidden]{display:none !important;}
@@ -282,7 +291,7 @@
     // ── Pressure & combat
     { id: 'aggro',      n: 'Aggro / weenie',          fam: 'pressure', a: [3,1,2,3,1], q: 't:creature mv<=2 pow>=2', fb: 't:creature mv<=2', d: 'Cheap efficient creatures, win before the opponent stabilizes.', win: ['beatdown','alpha'] },
     { id: 'burn',       n: 'Burn',                    fam: 'pressure', a: [0,0,1,3,0], q: 'otag:burn', fb: '(o:"damage to any target" or o:"damage to each opponent" or o:"damage to target player")', d: 'Direct damage spells that double as removal and reach.', win: ['burn'] },
-    { id: 'tokens',     n: 'Tokens / go-wide',        fam: 'pressure', a: [3,1,1,1,2], q: 'otag:token-generator', fb: '(o:"create" o:"token")', d: 'Flood the board with bodies, then pump them.', win: ['alpha','swarm'] },
+    { id: 'tokens',     n: 'Tokens / go-wide',        fam: 'pressure', a: [3,1,1,1,2], q: '(o:"create" o:"token")', fb: 'o:token', d: 'Flood the board with bodies, then pump them.', win: ['alpha','swarm'] },
     { id: 'anthems',    n: 'Anthems / overrun',       fam: 'pressure', a: [3,0,1,1,2], q: '(o:"creatures you control get +" or o:"other creatures you control get +")', fb: 'o:"creatures you control get"', d: 'Team-wide pumps turn a wide board lethal.', win: ['alpha'] },
     { id: 'flyers',     n: 'Flyers / evasion',        fam: 'pressure', a: [3,3,2,1,0], q: 't:creature (kw:flying or kw:menace or o:"can\'t be blocked")', fb: 't:creature kw:flying', d: 'Win the air while ground creatures stall.', win: ['beatdown','air'] },
     { id: 'stompy',     n: 'Big creatures / stompy',  fam: 'pressure', a: [0,0,1,2,3], q: 't:creature pow>=5', fb: 't:creature pow>=4', d: 'Ramp into creatures the opponent cannot block profitably.', win: ['beatdown','alpha'] },
@@ -293,7 +302,7 @@
     // ── Resource denial
     { id: 'discard',    n: 'Discard / hand attack',   fam: 'denial',   a: [0,1,3,1,0], q: '(o:"target opponent discards" or o:"each opponent discards" or o:"target player discards" or o:"reveals their hand")', fb: 'o:"discards"', d: 'Strip the opponent\'s hand so they run out of options.', win: ['handlock','drain'] },
     { id: 'mill',       n: 'Mill (opponent)',         fam: 'denial',   a: [0,3,2,0,1], q: '(otag:mill-opponent or (o:mill o:"target player") or o:"each opponent mills")', fb: '(o:"mills" or o:"mill")', d: 'Empty the opponent\'s library — they lose on their next draw.', win: ['decking'] },
-    { id: 'landdestruction', n: 'Land destruction',   fam: 'denial',   a: [1,0,1,3,2], q: '(otag:land-destruction or o:"destroy target land" or o:"destroy target nonbasic land" or o:"destroy all lands")', fb: '(o:"destroy target land" or o:"destroy all lands")', d: 'Cut the opponent off mana so they cannot cast spells.', win: ['lock','beatdown'] },
+    { id: 'landdestruction', n: 'Land destruction',   fam: 'denial',   a: [1,0,1,3,2], q: '(o:"destroy target land" or o:"destroy target nonbasic land" or o:"destroy all lands")', fb: '(o:"destroy target land" or o:"destroy all lands")', d: 'Cut the opponent off mana so they cannot cast spells.', win: ['lock','beatdown'] },
     { id: 'stax',       n: 'Stax / tax',              fam: 'denial',   a: [3,1,1,1,0], q: '(o:"cost {1} more" or o:"more to cast" or o:"don\'t untap" or o:"doesn\'t untap" or o:"can\'t cast more than")', fb: 'o:"more to cast"', d: 'Symmetric taxes and restrictions you are built to break.', win: ['lock'] },
     { id: 'wheels',     n: 'Wheels / hand-size punish', fam: 'denial', a: [0,2,2,3,0], q: '(o:"discards their hand" or o:"discard their hands" or o:"for each card in that player\'s hand" or o:"no cards in hand")', fb: 'o:"discards their hand"', d: 'Refill and punish full or empty hands.', win: ['burn','drain'] },
     { id: 'theft',      n: 'Theft / steal',           fam: 'denial',   a: [0,3,2,2,0], q: 'o:"gain control of"', fb: 'o:"gain control of"', d: 'Take the opponent\'s best permanents.', win: ['beatdown'] },
@@ -408,12 +417,12 @@
   ];
 
   const ERAS = [
-    { id: 'oldschool', n: 'Old School (1993–94)',     q: 'year<=1994' },
-    { id: 'premodern', n: 'Premodern (1995–2003)',    q: 'year>=1995 year<=2003' },
-    { id: 'modernold', n: 'Classic modern frame (2003–2011)', q: 'year>=2003 year<=2011' },
-    { id: 'pioneerera',n: 'Pioneer era (2012–2018)',  q: 'year>=2012 year<=2018' },
-    { id: 'modernday', n: 'Modern day (2019–2023)',   q: 'year>=2019 year<=2023' },
-    { id: 'recent',    n: 'Recent (2024–2026)',       q: 'year>=2024' },
+    { id: 'oldschool', n: 'Old School (1993–94)',     q: 'year<=1994', start: null, end: 1994 },
+    { id: 'premodern', n: 'Premodern (1995–2003)',    q: 'year>=1995 year<=2003', start: 1995, end: 2003 },
+    { id: 'modernold', n: 'Classic modern frame (2003–2011)', q: 'year>=2003 year<=2011', start: 2003, end: 2011 },
+    { id: 'pioneerera',n: 'Pioneer era (2012–2018)',  q: 'year>=2012 year<=2018', start: 2012, end: 2018 },
+    { id: 'modernday', n: 'Modern day (2019–2023)',   q: 'year>=2019 year<=2023', start: 2019, end: 2023 },
+    { id: 'recent',    n: 'Recent (2024–2026)',       q: 'year>=2024', start: 2024, end: null },
   ];
 
   /* Settings / season flavor — plane or vibe, by set code */
@@ -539,6 +548,17 @@
   const bucket = mv => clamp(Math.round(mv) || 1, 1, 5);
   const isCreature = c => /Creature/.test(c.type);
 
+  /* Formats only contain cards printed from a certain year on. An era that
+     ends before that leaves just reprints (or nothing). */
+  const FORMAT_START = { standard: 2023, brawl: 2023, pioneer: 2012, modern: 2003 };
+  function formatConflict(sel) {
+    const era = sel && sel.era && byId(TAX.ERAS, sel.era);
+    const start = sel && FORMAT_START[sel.format];
+    if (!era || !start || era.end == null || era.end >= start) return null;
+    const fmt = byId(TAX.FORMATS, sel.format) || {};
+    return `${fmt.n} only allows cards from about ${start} onward, so a ${era.n} deck can only use cards reprinted into ${fmt.n}. Switch the format to Casual, Legacy or Commander for the full ${era.n.split(' (')[0]} card pool.`;
+  }
+
   /* ── 1. plan ───────────────────────────────────────────── */
   function plan(sel) {
     const fmt = byId(TAX.FORMATS, sel.format) || TAX.FORMATS[0];
@@ -574,7 +594,7 @@
     (sel.wins || []).map(id => byId(TAX.WIN_MODES, id)).filter(Boolean).forEach(w => roles.push({
       key: 'win:' + w.id, label: w.n, kind: 'win',
       weight: 2, need: Math.ceil(nonlandSlots * 0.12),
-      q: `${nonland} ${wrap(w.q)} ${flavor}`, fb: `${nonland} ${wrap(w.fb)}`,
+      q: `${nonland} ${wrap(w.q)} ${flavor}`, fb: `${nonland} ${wrap(w.fb)} ${flavor}`,
     }));
     const tribes = sel.tribes || [];
     tribes.forEach(tr => {
@@ -582,19 +602,13 @@
       roles.push({
         key: 'tribe:' + tr, label: tr + ' (tribe)', kind: 'tribe',
         weight: 2.4, need: Math.ceil(nonlandSlots * 0.32 / tribes.length),
-        q: `${nonland} (t:"${t}" or o:"${t}") ${flavor}`, fb: `${nonland} (t:"${t}" or o:"${t}")`,
+        q: `${nonland} t:"${t}" ${flavor}`, fb: `${nonland} (t:"${t}" or o:"${t}") ${flavor}`,
       });
     });
 
-    // Flavor widening: same primary theme without era/setting, lower weight
-    if (flavor && !sel.strict && themes[0]) roles.push({
-      key: 'wide:' + themes[0].id, label: themes[0].n + ' (any era/setting)', kind: 'theme',
-      weight: 1.0, need: Math.ceil(nonlandSlots * 0.2),
-      q: `${nonland} ${wrap(themes[0].q)}`, fb: `${nonland} ${wrap(themes[0].fb)}`,
-    });
-
-    // Support packages every deck needs
-    const supFlavor = sel.strict ? flavor : '';
+    // Era and setting are HARD filters: every query below — including
+    // fallbacks, support packages and lands — carries them. No widening.
+    const supFlavor = flavor;
     const iShare = { aggro: 0.13, mid: 0.18, ctrl: 0.26 }[speed.id];
     const hasU = colors.includes('u');
     roles.push({
@@ -616,20 +630,29 @@
     roles.push({
       key: 'sup:staples', label: 'Format staples', kind: 'support',
       weight: 0.35, need: nonlandSlots,
-      q: `${nonland} ${supFlavor}`, fb: `${nonland}`,
+      q: `${nonland} ${supFlavor}`, fb: null,
     });
 
-    const landQ = `${base} t:land`;
+    const landQ = `${base} t:land ${flavor}`;
     let commanderQ = null;
     if (fmt.cmdr) {
       const keys = themes.map(t => wrap(t.q)).concat(tribes.map(t => `t:"${t.toLowerCase()}"`));
       const synergy = keys.length ? ` (${keys.join(' or ')})` : '';
       commanderQ = {
-        q: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors}${synergy}${budget.usd ? ' usd<=' + budget.usd : ''}`,
-        fb: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors}`,
+        q: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors}${synergy}${budget.usd ? ' usd<=' + budget.usd : ''} ${flavor}`,
+        fb: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors} ${flavor}`,
       };
     }
-    return { fmt, speed, budget, colors, size, lands, nonlandSlots, roles, landQ, commanderQ, flavor };
+    // Strict era: a card qualifies only if EVERY paper printing falls inside the era.
+    let eraOutside = null, eraLabel = null;
+    if (era) {
+      const parts = [];
+      if (era.start != null) parts.push(`year<${era.start}`);
+      if (era.end != null) parts.push(`year>${era.end}`);
+      eraOutside = parts.length ? `(${parts.join(' or ')})` : null;
+      eraLabel = era.n;
+    }
+    return { fmt, speed, budget, colors, size, lands, nonlandSlots, roles, landQ, commanderQ, flavor, eraOutside, eraLabel, conflict: formatConflict(sel) };
   }
 
   /* ── 2. gather ─────────────────────────────────────────── */
@@ -679,6 +702,72 @@
     }
   }
 
+  /* Which of these card names have ANY paper printing matching `outsideQ`?
+     Batched by exact name so nothing is missed by pagination. */
+  async function printedOutside(fetcher, names, outsideQ, health, delay = 150) {
+    const out = new Set();
+    const qn = n => `!"${n.replace(/"/g, '')}"`;
+    for (let i = 0; i < names.length; i += 35) {
+      const chunk = names.slice(i, i + 35);
+      const q = `game:paper ${outsideQ} (${chunk.map(qn).join(' or ')})`;
+      let url = `${API}/cards/search?unique=cards&q=${encodeURIComponent(q)}`;
+      while (url) {
+        let res;
+        try { res = await fetcher(url); } catch (e) { const err = new Error('network'); err.kind = 'network'; throw err; }
+        if (res.status === 429) { await sleep(1000); continue; }
+        if (res.status === 404) break;
+        if (!res.ok) break;
+        const j = await res.json();
+        ((j && j.data) || []).forEach(c => out.add(c.name));
+        url = j && j.has_more ? j.next_page : null;
+        if (url) await sleep(delay);
+      }
+      await sleep(delay);
+    }
+    return out;
+  }
+
+  /* ── facets: how many cards an option could draw from under the HARD
+     filters (format, colors, budget, era, setting). Other drivers are not
+     intersected — a deck mixes roles, so they don't constrain each other.
+     Strict-era reprint exclusion isn't applied here, so counts are an upper
+     bound; zero is always exact. */
+  function facetQuery(sel, kind, id) {
+    const fmt = byId(TAX.FORMATS, sel.format) || TAX.FORMATS[0];
+    const budget = byId(TAX.BUDGETS, sel.budget) || TAX.BUDGETS[0];
+    const parts = ['game:paper', '-t:basic'];
+    if (fmt.f) parts.push('f:' + fmt.f);
+    const cols = sortColors((sel.colors || '').toLowerCase());
+    if (cols) parts.push('id<=' + cols);
+    if (budget.usd) parts.push('usd<=' + budget.usd);
+    const era = kind === 'era' ? byId(TAX.ERAS, id) : (sel.era && byId(TAX.ERAS, sel.era));
+    const setting = kind === 'setting' ? byId(TAX.SETTINGS, id) : (sel.setting && byId(TAX.SETTINGS, sel.setting));
+    if (era) parts.push(era.q);
+    if (setting) parts.push(setting.q);
+    let frag = '', fb = '';
+    if (kind === 'themes') { const t = byId(TAX.THEMES, id); if (t) { frag = t.q; fb = t.fb; parts.push('-t:land'); } }
+    if (kind === 'wins') { const w = byId(TAX.WIN_MODES, id); if (w) { frag = w.q; fb = w.fb; parts.push('-t:land'); } }
+    if (kind === 'tribes') { frag = `t:"${String(id).toLowerCase().replace(/"/g, '')}"`; }
+    if (kind === 'era' || kind === 'setting') parts.push('-t:land');
+    const base = parts.join(' ');
+    return { q: frag ? `${base} (${frag})` : base, fb: fb ? `${base} (${fb})` : null, approx: !!era };
+  }
+
+  async function countCards(fetcher, q) {
+    const url = `${API}/cards/search?unique=cards&q=${encodeURIComponent(q.replace(/\s+/g, ' ').trim())}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let res;
+      try { res = await fetcher(url); } catch (e) { return null; }
+      if (res.status === 429) { await sleep(1000 * (attempt + 1)); continue; }
+      if (res.status === 404) return 0;
+      if (!res.ok) return res.status === 400 ? -1 : null; // -1 = query rejected → caller tries fallback
+      const j = await res.json();
+      if (!j) return null;
+      return j.total_cards != null ? j.total_cards : (j.data || []).length;
+    }
+    return null;
+  }
+
   async function ping(fetcher) {
     try { const r = await fetcher(`${API}/cards/named?exact=${encodeURIComponent('Lightning Bolt')}`); return r.ok; }
     catch (e) { return false; }
@@ -708,12 +797,27 @@
       // first role failing at the network level with nothing succeeding → stop early, don't fake a deck
       if (health.failed && !health.ok) throw unreachable();
       if (!results[r.key].length && r.kind !== 'support') notes.push(p.flavor && !r.key.startsWith('wide:')
-        ? `${r.label}: nothing in the chosen era/setting${p.roles.some(x => x.key.startsWith('wide:')) ? ' — filled from any era' : ''}.`
+        ? `${r.label}: nothing in the chosen era/setting for this format and colors.`
         : `${r.label}: nothing legal matched — try other colors or loosen filters.`);
       tick(r.label); await sleep(delay);
     }
-    const landCards = await searchWithFallback(fetcher, p.landQ, null, notes, 'Lands', health);
+    let landCards = await searchWithFallback(fetcher, p.landQ, null, notes, 'Lands', health);
     tick('Mana base');
+
+    // Strict era: drop any card that also has a paper printing outside the era
+    if (p.eraOutside) {
+      const names = new Set();
+      Object.values(results).forEach(list => list.forEach(c => names.add(c.name)));
+      landCards.forEach(c => names.add(c.name));
+      if (commander) names.add(commander.name);
+      const outside = await printedOutside(fetcher, [...names], p.eraOutside, health, delay);
+      if (outside.size) {
+        for (const k of Object.keys(results)) results[k] = results[k].filter(c => !outside.has(c.name));
+        landCards = landCards.filter(c => !outside.has(c.name));
+        if (commander && outside.has(commander.name)) { commander = null; notes.push('The best commander match was reprinted outside the era and was dropped.'); }
+        notes.push(`Strict era: removed ${outside.size} card(s) that were also printed outside ${p.eraLabel}.`);
+      }
+    }
     if (health.failed) notes.push(`${health.failed} search(es) failed to connect — the list may be thinner than normal. Rebuild to retry.`);
     return { results, landCards, commander, notes, health };
   }
@@ -787,7 +891,7 @@
       filled += n; order++;
     }
     if (!picks.length) {
-      const e = new Error('No spells matched these choices. Try fewer drivers, more colors, a wider format (Casual / Commander), or turn off Strict flavor.');
+      const e = new Error(p.conflict || 'No spells matched these choices. Try fewer drivers, more colors, a wider format (Casual / Commander), or remove the era/setting.');
       e.kind = 'empty'; throw e;
     }
     if (filled < p.nonlandSlots) notes.push(`Only ${filled} of ${p.nonlandSlots} spell slots could be filled — loosen filters or add colors.`);
@@ -958,7 +1062,7 @@
 
   function sortColors(s) { return 'wubrg'.split('').filter(c => s.includes(c)).join('') || (s.includes('c') ? 'c' : ''); }
 
-  const api = { MAX_DRIVERS, ping, plan, gather, assemble, estimate, build, swap, cheapestPrinting, normalize, quality, driverCount, sortColors, basicCard, API };
+  const api = { MAX_DRIVERS, facetQuery, countCards, formatConflict, ping, plan, gather, assemble, estimate, build, swap, cheapestPrinting, normalize, quality, driverCount, sortColors, basicCard, API };
   root.DM_ENGINE = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -988,7 +1092,7 @@
     get(k, d) { try { const v = localStorage.getItem('dm_' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('dm_' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
   };
-  const DEFAULT_SEL = { format: 'standard', colors: '', speed: 'mid', budget: 'any', themes: [], wins: [], tribes: [], era: null, setting: null, strict: false };
+  const DEFAULT_SEL = { format: 'standard', colors: '', speed: 'mid', budget: 'any', themes: [], wins: [], tribes: [], era: null, setting: null };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
   /* Drafts = every build in progress or finished. One is "current". */
@@ -1061,6 +1165,43 @@
   /* ── network ─────────────────────────────────────────── */
   const fetcher = url => fetch(url, { headers: { Accept: 'application/json' } });
   E.ping(fetcher).then(ok => { online = ok; if (!ok) render(); });
+
+  /* ── live option counts (facets) ───────────────────── */
+  const counts = new Map(Object.entries(store.get('counts', {})).filter(([, v]) => Date.now() - v.t < 864e5));
+  let countQueue = [], countBusy = false, countGen = 0;
+  const saveCounts = () => { const o = {}; [...counts.entries()].slice(-1500).forEach(([k, v]) => o[k] = v); store.set('counts', o); };
+  function getCount(kind, id, cb) {
+    const fq = E.facetQuery(sel, kind, id);
+    const hit = counts.get(fq.q);
+    if (hit) { cb(hit.n, fq.approx); return; }
+    countQueue.push({ fq, cb, gen: countGen });
+    pumpCounts();
+  }
+  async function pumpCounts() {
+    if (countBusy) return; countBusy = true;
+    while (countQueue.length) {
+      const job = countQueue.shift();
+      if (job.gen !== countGen) continue; // picker closed / filters changed
+      const hit = counts.get(job.fq.q);
+      if (hit) { job.cb(hit.n, job.fq.approx); continue; }
+      let n = await E.countCards(fetcher, job.fq.q);
+      if ((n === -1 || n === 0) && job.fq.fb) n = await E.countCards(fetcher, job.fq.fb); // a renamed tag returns 0, not an error
+      if (n != null && n >= 0) { counts.set(job.fq.q, { n, t: Date.now() }); saveCounts(); }
+      if (job.gen === countGen) job.cb(n != null && n >= 0 ? n : null, job.fq.approx);
+      await new Promise(r => setTimeout(r, 110)); // Scryfall: ≤10 requests/second
+    }
+    countBusy = false;
+  }
+  const cancelCounts = () => { countGen++; countQueue = []; };
+  const fmtCount = (n, approx) => n == null ? '' : n === 0 ? 'No cards with your current filters' : `${approx ? 'up to ' : ''}${n.toLocaleString()} card${n === 1 ? '' : 's'}`;
+  const filterSummary = () => {
+    const bits = [(T.FORMATS.find(f => f.id === sel.format) || {}).n];
+    const id = T.IDENTITIES.find(x => x.id === E.sortColors(sel.colors)); bits.push(id ? id.n : 'any colors');
+    if (sel.budget !== 'any') bits.push((T.BUDGETS.find(b => b.id === sel.budget) || {}).n);
+    if (sel.era) bits.push((T.ERAS.find(x => x.id === sel.era) || {}).n);
+    if (sel.setting) bits.push((T.SETTINGS.find(x => x.id === sel.setting) || {}).n.split(' (')[0]);
+    return bits.join(' · ');
+  };
   fetcher('https://api.scryfall.com/catalog/creature-types').then(r => r.ok ? r.json() : null).then(j => {
     if (j && j.data && j.data.length > 50) tribes = [...new Set(j.data)].sort();
   }).catch(() => {});
@@ -1208,6 +1349,8 @@
       ${buildError ? `<div class="banner err"><b>${buildError.kind === 'empty' ? 'No cards matched' : 'Build failed'}</b>${esc(buildError.kind === 'network' ? OFFLINE_HELP : buildError.message)}</div>` : ''}
       ${deck && stale && !building ? `<div class="banner"><b>Choices changed since your last build</b>The deck in Step 3 still reflects your old picks. Tap <b>Rebuild deck</b> to update it, or go to Review to keep the old one.</div>` : ''}
 
+      ${E.formatConflict(sel) ? `<div class="banner"><b>Format and era don't match</b>${esc(E.formatConflict(sel))}<div class="row"><button class="btn sm" data-fmt="legacy">Use Legacy</button><button class="btn sm" data-fmt="casual">Use Casual</button>${sel.format === 'brawl' ? '<button class="btn sm" data-fmt="commander">Use Commander</button>' : ''}</div></div>` : ''}
+      <div id="zero-banner"></div>
       <div class="card">
         <h3>Drivers <span class="count"><b>${drivers()}</b> / ${E.MAX_DRIVERS}</span></h3>
         <div class="driver"><div class="dl">Themes<br><small style="color:var(--muted)">★ = primary</small></div><div class="chips">${chipList(sel.themes, 'themes', themeName)}${add('themes', 'theme')}</div></div>
@@ -1215,7 +1358,7 @@
         <div class="driver"><div class="dl">Tribe</div><div class="chips">${chipList(sel.tribes, 'tribes', v => v)}${add('tribes', 'creature type')}</div></div>
         <div class="driver"><div class="dl">Setting</div><div class="chips">${single(sel.setting, 'setting', T.SETTINGS)}${sel.setting ? '' : add('setting', 'plane / season')}</div></div>
         <div class="driver"><div class="dl">Era</div><div class="chips">${single(sel.era, 'era', T.ERAS)}${sel.era ? '' : add('era', 'era')}</div></div>
-        ${sel.era || sel.setting ? `<label class="toggle"><span>Strict flavor — <span style="color:var(--muted)">every card must match era/setting</span></span><input type="checkbox" id="f-strict"${sel.strict ? ' checked' : ''}></label>` : ''}
+        ${sel.era || sel.setting ? `<p class="hint" style="margin-top:10px">🔒 Era and setting are hard filters — every card, including lands, must come from them.</p>` : ''}
         ${left() <= 0 ? '<p class="hint">Driver limit reached — remove one to add another.</p>' : ''}
         <p class="hint">Not sure what to pick? <a href="#" id="open-guide" style="color:var(--amber)">Browse the theme guide</a> — it's reference only; nothing changes unless you tap "Add to build".</p>
       </div>
@@ -1235,6 +1378,14 @@
       <button class="btn sm" id="share">Share this setup</button>`;
 
     $$('#step-strategy .chip.sugg').forEach(el => el.onclick = () => { sel.colors = el.dataset.id; change(); renderStrategy(); });
+    // flag picked drivers that can't match anything under the current hard filters
+    cancelCounts();
+    $$('#step-strategy [data-rm]').forEach(el => {
+      const kind = el.dataset.rm, id = el.dataset.v;
+      getCount(kind, id, (n) => {
+        if (n === 0) { el.classList.add('warn'); el.title = 'No cards with your current filters'; const x = el.querySelector('.x'); if (x && !el.querySelector('.zc')) x.insertAdjacentHTML('beforebegin', '<span class="zc">0 cards</span>'); renderZeroBanner(); }
+      });
+    });
     $$('#step-strategy [data-rm]').forEach(el => el.onclick = e => {
       const k = el.dataset.rm, v = el.dataset.v;
       if (k === 'themes' && !e.target.classList.contains('x') && sel.themes.indexOf(v) > 0) sel.themes = [v, ...sel.themes.filter(x => x !== v)];
@@ -1243,11 +1394,17 @@
       change(); renderStrategy();
     });
     $$('#step-strategy [data-add]').forEach(el => el.onclick = () => openPicker(el.dataset.add));
-    const st = $('#f-strict'); if (st) st.onchange = e => { sel.strict = e.target.checked; change(); };
+    $$('#step-strategy [data-fmt]').forEach(b => b.onclick = () => { sel.format = b.dataset.fmt; change(); renderStrategy(); toast('Format: ' + (byId(T.FORMATS, sel.format) || {}).n); });
     $('#open-guide').onclick = e => { e.preventDefault(); openGuide(); };
     $('#to-setup').onclick = e => { e.preventDefault(); goStep('setup'); };
     $('#share').onclick = shareSetup;
     wireOffline();
+  }
+
+  function renderZeroBanner() {
+    const z = $$('#step-strategy .chip.warn');
+    const el = $('#zero-banner'); if (!el) return;
+    el.innerHTML = z.length ? `<div class="banner err"><b>${z.length} pick${z.length > 1 ? 's have' : ' has'} no cards</b>With ${esc(filterSummary())}, the red pick${z.length > 1 ? 's' : ''} can't match any card. Remove ${z.length > 1 ? 'them' : 'it'}, or loosen the era, setting, budget, colors or format.</div>` : '';
   }
 
   function affDots(a) {
@@ -1273,16 +1430,39 @@
         if (o.grp && o.grp !== lastG && !f) { out += `<div class="grp">${esc(o.grp)}</div>`; lastG = o.grp; }
         const on = chosen().includes(o.id);
         const dis = !on && multi && left() <= 0;
-        out += `<div class="opt${on ? ' on' : ''}${dis ? ' dis' : ''}" data-id="${esc(o.id)}"><div class="ck">${on ? '✓' : ''}</div><div class="t">${esc(o.n)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</div>${o.extra || ''}</div>`;
+        const ck = counts.get(E.facetQuery(sel, kind, o.id).q);
+        const zero = ck && ck.n === 0;
+        out += `<div class="opt${on ? ' on' : ''}${dis ? ' dis' : ''}${zero ? ' zero' : ''}" data-id="${esc(o.id)}"><div class="ck">${on ? '✓' : ''}</div><div class="t">${esc(o.n)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}<small class="cnt">${ck ? fmtCount(ck.n, E.facetQuery(sel, kind, o.id).approx) : '<span class="ld">counting…</span>'}</small></div>${o.extra || ''}</div>`;
       }
       return out || '<div class="empty">No matches.</div>';
     };
-    const body = `<div class="search"><input class="inp" id="pk-q" type="search" placeholder="Search ${title.toLowerCase()}…" autocomplete="off"></div><div id="pk-list">${drawList('')}</div>`;
-    openSheet(title, body, `<button class="btn primary" id="pk-done">Done · ${drivers()}/${E.MAX_DRIVERS}</button>`, () => { change(); renderStrategy(); });
+    const body = `<div class="search"><input class="inp" id="pk-q" type="search" placeholder="Search ${title.toLowerCase()}…" autocomplete="off"><div class="facetnote">Counts use your filters: <b>${esc(filterSummary())}</b>. Greyed options have no cards.</div></div><div id="pk-list">${drawList('')}</div>`;
+    openSheet(title, body, `<button class="btn primary" id="pk-done">Done · ${drivers()}/${E.MAX_DRIVERS}</button>`, () => { cancelCounts(); if (io) io.disconnect(); change(); renderStrategy(); });
     const q = $('#pk-q');
-    q.oninput = () => $('#pk-list').innerHTML = drawList(q.value);
+    // count only rows that are on screen — keeps requests low on long lists (300+ tribes)
+    let io = null;
+    const observe = () => {
+      if (io) io.disconnect();
+      cancelCounts();
+      io = new IntersectionObserver(entries => entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const el = en.target; io.unobserve(el);
+        if (!el.querySelector('.ld')) return;
+        getCount(kind, el.dataset.id, (n, approx) => {
+          const c = el.querySelector('.cnt'); if (!c) return;
+          c.textContent = n == null ? '' : fmtCount(n, approx);
+          if (n === 0 && !el.classList.contains('on')) el.classList.add('zero');
+          if (n === 0 && el.classList.contains('on')) el.classList.add('zero-on');
+        });
+      }), { root: $('#sh-body'), rootMargin: '120px' });
+      $$('#pk-list .opt').forEach(el => io.observe(el));
+    };
+    const redraw = () => { $('#pk-list').innerHTML = drawList(q.value); observe(); };
+    q.oninput = redraw;
+    observe();
     $('#pk-list').onclick = e => {
       const el = e.target.closest('.opt'); if (!el || el.classList.contains('dis')) return;
+      if (el.classList.contains('zero')) { toast('No cards match with your current filters'); return; }
       const id = el.dataset.id;
       if (multi) {
         if (sel[kind].includes(id)) sel[kind] = sel[kind].filter(x => x !== id);
@@ -1292,7 +1472,7 @@
         if (!was && !sel[kind] && left() <= 0) return;
         sel[kind] = was ? null : id;
       }
-      $('#pk-list').innerHTML = drawList(q.value);
+      redraw();
       $('#pk-done').textContent = `Done · ${drivers()}/${E.MAX_DRIVERS}`;
       if (!multi) closeSheet();
     };
