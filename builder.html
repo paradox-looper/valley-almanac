@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0C120D" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Deck Builder — Valley Almanac</title>
+<link rel="preconnect" href="https://api.scryfall.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0C120D; --surface:#141C15; --raised:#1B2620; --line:#243029;
+    --text:#EAE3D2; --muted:#8B967F; --amber:#E8A94B; --amber-dim:#9C7434;
+    --green:#5BA85F; --red:#C4553C;
+    --mW:#F3EBC8; --mU:#4F8FD6; --mB:#9A86A8; --mR:#D8573B; --mG:#4E9B5A; --mC:#B9B3A6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{min-height:100vh; color:var(--text);
+    background:radial-gradient(120% 50% at 50% -5%, rgba(232,169,75,.07), transparent 60%), var(--bg);
+    font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    padding-bottom:calc(130px + env(safe-area-inset-bottom)); font-size:15px;}
+  button,select,input,textarea{font:inherit; color:inherit;}
+  .wrap{max-width:520px; margin:0 auto; padding:0 14px;}
+  header{padding:22px 2px 8px; text-align:center;}
+  .eyebrow{font-size:11px; letter-spacing:.22em; color:var(--amber); text-transform:uppercase; font-weight:600;}
+  h1{font-family:'Cormorant Garamond', Georgia, serif; font-size:32px; font-weight:700; margin:4px 0 2px;}
+  h2{font-family:'Cormorant Garamond', Georgia, serif; font-size:23px; font-weight:700; margin:0;}
+  .tagline{font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .nav{display:flex; gap:8px; justify-content:center; margin:12px 0 0;}
+  .nav a{flex:1; text-align:center; min-height:42px; line-height:42px; border-radius:11px; border:1px solid var(--line); color:var(--muted); text-decoration:none; font-size:14px; font-weight:600;}
+  .nav a.on{background:var(--raised); border-color:var(--amber-dim); color:var(--text);}
+
+  .tabs{position:sticky; top:0; z-index:20; padding:10px 0 8px; background:linear-gradient(var(--bg) 80%, transparent);}
+  .seg{display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:4px; gap:4px;}
+  .seg button{min-height:40px; border-radius:9px; border:none; background:transparent; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer;}
+  .seg button.on{background:var(--raised); box-shadow:inset 0 0 0 1px var(--amber-dim); color:var(--text);}
+  .seg .badge{display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; border-radius:9px; background:var(--amber); color:#1a1408; font-size:11px; line-height:18px;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:14px; margin:12px 0;}
+  .card h3{margin:0 0 10px; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); font-weight:700; display:flex; justify-content:space-between; align-items:center;}
+  .card h3 .count{letter-spacing:0; font-size:13px; color:var(--muted); text-transform:none;}
+  .card h3 .count b{color:var(--text);}
+  .field{margin:0 0 12px;}
+  .field:last-child{margin-bottom:0;}
+  .lbl{font-size:12.5px; color:var(--muted); margin:0 0 6px; display:flex; justify-content:space-between;}
+  select,.inp{width:100%; min-height:46px; border-radius:11px; border:1px solid var(--line); background:var(--raised); padding:0 12px; font-size:16px; -webkit-appearance:none; appearance:none;}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position:calc(100% - 18px) 20px, calc(100% - 13px) 20px; background-size:5px 5px; background-repeat:no-repeat; padding-right:34px;}
+  textarea.inp{min-height:140px; padding:10px 12px; font-size:14px;}
+
+  .pips{display:flex; gap:8px;}
+  .pip{flex:1; aspect-ratio:1; max-width:58px; border-radius:50%; border:2px solid var(--line); background:var(--raised); display:grid; place-items:center; font-weight:800; font-size:17px; color:#111; opacity:.45; cursor:pointer; transition:transform .1s, opacity .15s;}
+  .pip.on{opacity:1; border-color:var(--text); transform:scale(1.04);}
+  .pip[data-c=w]{background:var(--mW);} .pip[data-c=u]{background:var(--mU);} .pip[data-c=b]{background:var(--mB);} .pip[data-c=r]{background:var(--mR);} .pip[data-c=g]{background:var(--mG);} .pip[data-c=c]{background:var(--mC);}
+  .idname{font-size:13px; color:var(--text); margin-top:8px; min-height:18px;}
+  .idname span{color:var(--muted);}
+
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:0 12px; border-radius:17px; border:1px solid var(--line); background:var(--raised); font-size:13.5px; cursor:pointer;}
+  .chip.on{border-color:var(--amber-dim); background:#2a2416;}
+  .chip .x{color:var(--muted); font-size:15px; margin-left:2px;}
+  .chip.primary{border-color:var(--amber); }
+  .chip.primary::before{content:'★'; color:var(--amber); font-size:12px;}
+  .chip.add{color:var(--amber); border-style:dashed;}
+  .chip.sugg{font-size:12.5px; min-height:30px;}
+
+  .driver{display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-top:1px solid var(--line);}
+  .driver:first-of-type{border-top:none; padding-top:2px;}
+  .driver .dl{width:84px; flex:none; font-size:12.5px; color:var(--muted); padding-top:8px;}
+  .driver .chips{flex:1;}
+
+  .btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:50px; border-radius:13px; border:1px solid var(--line); background:var(--raised); font-size:15px; font-weight:700; cursor:pointer; text-decoration:none; color:var(--text);}
+  .btn.primary{background:linear-gradient(180deg,#F0B65C,#D8963A); color:#1a1408; border:none;}
+  .btn.primary:disabled{opacity:.5;}
+  .btn.sm{min-height:40px; font-size:13.5px; border-radius:11px;}
+  .row{display:flex; gap:8px;} .row > *{flex:1;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .toggle{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13.5px; padding-top:10px; border-top:1px solid var(--line); margin-top:4px;}
+  .toggle input{width:22px; height:22px; accent-color:var(--amber);}
+  .hint{font-size:12px; color:var(--muted); line-height:1.5; margin:8px 2px 0;}
+
+  .progress{height:6px; border-radius:3px; background:var(--raised); overflow:hidden; margin-top:10px;}
+  .progress i{display:block; height:100%; width:0; background:var(--amber); transition:width .2s;}
+  .status{font-size:12.5px; color:var(--muted); margin-top:6px; min-height:16px;}
+
+  /* score */
+  .score{display:flex; gap:14px; align-items:center;}
+  .dial{width:96px; height:96px; flex:none; position:relative;}
+  .dial svg{transform:rotate(-90deg);}
+  .dial .v{position:absolute; inset:0; display:grid; place-items:center; text-align:center;}
+  .dial .v b{font-family:'Cormorant Garamond', Georgia, serif; font-size:32px; line-height:1;}
+  .dial .v small{display:block; font-size:10px; color:var(--muted); letter-spacing:.1em;}
+  .tag{display:inline-block; font-size:10px; letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border-radius:6px; border:1px solid var(--amber-dim); color:var(--amber); font-weight:700;}
+  .bars{margin-top:12px;}
+  .bar{display:grid; grid-template-columns:88px 1fr 34px; gap:8px; align-items:center; font-size:12px; color:var(--muted); margin:6px 0;}
+  .bar .t{height:7px; border-radius:4px; background:var(--raised); overflow:hidden;}
+  .bar .t i{display:block; height:100%; background:var(--green);}
+  .bar span:last-child{text-align:right; color:var(--text);}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
+  .stat{background:var(--raised); border-radius:11px; padding:9px; text-align:center;}
+  .stat b{display:block; font-size:17px;} .stat span{font-size:11px; color:var(--muted);}
+  .curve{display:flex; align-items:flex-end; gap:6px; height:64px; margin-top:12px;}
+  .curve div{flex:1; text-align:center; font-size:10.5px; color:var(--muted);}
+  .curve div i{display:block; background:var(--amber-dim); border-radius:4px 4px 0 0; margin-bottom:3px;}
+
+  /* list */
+  .sec{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:14px 2px 4px; display:flex; justify-content:space-between;}
+  .line{display:grid; grid-template-columns:26px 1fr auto auto; gap:8px; align-items:center; min-height:48px; padding:6px 2px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .line .q{font-weight:700; color:var(--amber); text-align:right;}
+  .line .nm{font-size:14.5px; line-height:1.25; overflow:hidden;}
+  .line .nm small{display:block; color:var(--muted); font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .line .pr{font-size:12.5px; color:var(--muted); text-align:right; min-width:46px;}
+  .own{min-width:48px; min-height:32px; border-radius:9px; border:1px solid var(--line); background:var(--raised); font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer;}
+  .own.full{background:rgba(91,168,95,.18); border-color:var(--green); color:#BFE3C0;}
+  .own.part{border-color:var(--amber-dim); color:var(--amber);}
+  .ms{display:inline-flex; gap:1px; vertical-align:-3px;}
+  .ms img{width:15px; height:15px;}
+  .notes{font-size:12px; color:var(--muted); line-height:1.5; padding-left:16px; margin:8px 0 0;}
+
+  /* matrix */
+  .mx{width:100%; border-collapse:collapse; font-size:13px;}
+  .mx th{font-size:11px; color:var(--muted); font-weight:600; padding:6px 0; position:sticky; top:52px; background:var(--surface); z-index:2;}
+  .mx td{padding:0; border-top:1px solid var(--line); height:44px;}
+  .mx td.n{padding:6px 6px 6px 0; line-height:1.25; cursor:pointer;}
+  .mx td.n small{display:block; color:var(--muted); font-size:11px;}
+  .mx td.d{width:34px; text-align:center;}
+  .dot{display:inline-block; border-radius:50%;}
+  .mx tr.sel td.n{color:var(--amber);}
+  .mxi{background:var(--raised); border-radius:11px; padding:10px; font-size:13px; line-height:1.5; margin:4px 0 8px;}
+  .ids{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+  .ids div{font-size:12.5px;} .ids b{font-weight:600;}
+
+  /* sheet */
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .scrim.on{opacity:1; pointer-events:auto;}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; max-height:90vh; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0; transform:translateY(105%); visibility:hidden; transition:transform .25s ease, visibility 0s linear .25s; padding-bottom:env(safe-area-inset-bottom);}
+  .sheet.on{transform:none; visibility:visible; transition:transform .25s ease;}
+  .sheet .grab{width:40px; height:5px; border-radius:3px; background:var(--line); margin:8px auto 4px;}
+  .sheet .hd{display:flex; align-items:center; gap:10px; padding:6px 16px 10px; border-bottom:1px solid var(--line);}
+  .sheet .hd h2{flex:1; font-size:21px;}
+  .sheet .close{width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--raised); font-size:18px; cursor:pointer;}
+  .sheet .bd{overflow:auto; -webkit-overflow-scrolling:touch; padding:12px 16px 18px;}
+  .sheet .ft{padding:10px 16px 12px; border-top:1px solid var(--line);}
+  .sheet-inner{max-width:520px; width:100%; margin:0 auto; display:flex; flex-direction:column; min-height:0;}
+  .opt{display:flex; align-items:center; gap:10px; min-height:50px; padding:6px 2px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .opt .ck{width:24px; height:24px; flex:none; border-radius:7px; border:1.5px solid var(--muted); display:grid; place-items:center; font-size:14px; color:#1a1408;}
+  .opt.on .ck{background:var(--amber); border-color:var(--amber);}
+  .opt.dis{opacity:.4;}
+  .opt .t{flex:1; font-size:15px; line-height:1.3;}
+  .opt .t small{display:block; color:var(--muted); font-size:12px;}
+  .opt .aff{display:flex; gap:3px;}
+  .grp{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); margin:14px 0 2px;}
+  .search{position:sticky; top:-12px; background:var(--surface); padding:2px 0 8px; z-index:2;}
+
+  .cimg{width:100%; max-width:300px; display:block; margin:0 auto 12px; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.5);}
+  .frame{border-radius:14px; border:2px solid var(--amber-dim); background:var(--raised); padding:12px; margin-bottom:12px;}
+  .frame .tl{display:flex; justify-content:space-between; font-weight:700;}
+  .frame .ty{font-size:12.5px; color:var(--muted); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:6px 0; margin:8px 0;}
+  .oracle{white-space:pre-wrap; font-size:14px; line-height:1.5;}
+  .oracle img{width:14px; height:14px; vertical-align:-2px;}
+  .why{display:flex; flex-wrap:wrap; gap:5px; margin:10px 0;}
+  .why span{font-size:11.5px; padding:3px 8px; border-radius:8px; background:var(--raised); border:1px solid var(--line); color:var(--muted);}
+  .pricebox{background:var(--raised); border-radius:12px; padding:10px 12px; margin:10px 0; font-size:13.5px; line-height:1.6;}
+  .pricebox b{font-size:18px;}
+  .stepper{display:flex; align-items:center; gap:10px; margin:10px 0;}
+  .stepper button{width:44px; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--raised); font-size:20px; cursor:pointer;}
+  .stepper span{flex:1; text-align:center; font-size:14px;}
+  .empty{text-align:center; color:var(--muted); padding:34px 10px; font-size:14px; line-height:1.6;}
+  .toast{position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:var(--raised); border:1px solid var(--amber-dim); border-radius:12px; padding:10px 16px; font-size:14px; opacity:0; transition:all .2s; z-index:60; pointer-events:none;}
+  .toast.on{opacity:1; transform:translateX(-50%);}
+
+  /* ── step flow ── */
+  .toolbar{display:flex; gap:8px; margin:12px 0 0;}
+  .toolbar button{flex:1; min-height:40px; border-radius:11px; border:1px dashed var(--line); background:transparent; color:var(--muted); font-size:13.5px; font-weight:600; cursor:pointer;}
+  .toolbar button b{color:var(--text);}
+  .flowbar{position:sticky; top:0; z-index:20; padding:10px 0 8px; background:linear-gradient(var(--bg) 82%, transparent);}
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:6px 4px;}
+  .st{display:flex; flex-direction:column; align-items:center; gap:3px; border:none; background:transparent; padding:2px 0; cursor:pointer; color:var(--muted); font-size:11.5px; font-weight:600;}
+  .st i{font-style:normal; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; border:1.5px solid var(--line); font-size:12.5px; background:var(--raised);}
+  .st.done i{background:rgba(91,168,95,.2); border-color:var(--green); color:#BFE3C0;}
+  .st.cur{color:var(--text);} .st.cur i{background:var(--amber); border-color:var(--amber); color:#1a1408;}
+  .st.lock{opacity:.4; cursor:not-allowed;}
+  .stephead{margin:6px 2px 4px;}
+  .stephead .k{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); font-weight:700;}
+  .stephead h2{margin:2px 0 4px;}
+  .stephead p{margin:0; font-size:13px; color:var(--muted); line-height:1.5;}
+  .banner{border-radius:13px; padding:11px 13px; margin:12px 0; font-size:13.5px; line-height:1.5; border:1px solid var(--amber-dim); background:#231d10;}
+  .banner.err{border-color:var(--red); background:#2a1510;}
+  .banner b{display:block; margin-bottom:2px;}
+  .banner .row{margin-top:8px;}
+  .actionbar{position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(12,18,13,.94); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom));}
+  .actionbar .in{max-width:520px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center;}
+  .actionbar .back{min-height:50px; padding:0 16px; border-radius:13px; border:1px solid var(--line); background:var(--raised); font-weight:700; cursor:pointer;}
+  .actionbar .back[hidden]{display:none;}
+  .saved{max-width:520px; margin:0 auto 6px; font-size:11.5px; color:var(--muted); text-align:center;}
+  .saved b{color:var(--green); font-weight:600;}
+  .refnote{font-size:12.5px; color:var(--muted); background:var(--raised); border-radius:10px; padding:8px 10px; margin-bottom:10px; line-height:1.45;}
+  .refnote b{color:var(--amber);}
+  .draft{display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line);}
+  .draft .t{flex:1; cursor:pointer;} .draft .t small{display:block; color:var(--muted); font-size:12px;}
+  .draft .t.cur{color:var(--amber);}
+  .draft button{min-height:36px; padding:0 10px; border-radius:9px; border:1px solid var(--line); background:var(--raised); font-size:12.5px; cursor:pointer;}
+  .summary{font-size:13px; line-height:1.6; color:var(--muted);} .summary b{color:var(--text); font-weight:600;}
+  footer{text-align:center; font-size:11.5px; color:var(--muted); padding:18px 10px; line-height:1.6;}
+  footer a{color:var(--muted);}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Valley Almanac</div>
+    <h1>Deck Builder</h1>
+    <div class="tagline">Four steps: set up → choose a strategy → review the deck → shop for what you're missing. Everything autosaves.</div>
+    <nav class="nav">
+      <a href="index.html">Decks</a>
+      <a href="ev.html">EV Engine</a>
+      <a href="builder.html" class="on">Builder</a>
+    </nav>
+    <div class="toolbar">
+      <button id="tb-builds">🗂 My builds <b id="tb-count"></b></button>
+      <button id="tb-guide">📖 Theme guide</button>
+    </div>
+  </header>
+
+  <div class="flowbar"><div class="steps" id="steps"></div></div>
+
+  <main>
+    <section id="step-setup"></section>
+    <section id="step-strategy" hidden></section>
+    <section id="step-deck" hidden></section>
+    <section id="step-shop" hidden></section>
+  </main>
+
+  <footer>
+    Card data, images and prices from <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a> (prices = TCGplayer market, refreshed daily).
+    Win % is an <b>inferred</b> estimate from card quality, synergy, curve and interaction — not tournament data.
+    Not affiliated with Wizards of the Coast.
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="sheet-inner">
+  <div class="grab"></div>
+  <div class="hd"><h2 id="sh-title"></h2><button class="close" id="sh-close" aria-label="Close">✕</button></div>
+  <div class="bd" id="sh-body"></div>
+  <div class="ft" id="sh-foot" hidden></div>
+</div></div>
+<div class="actionbar"><div class="saved" id="saved"></div><div class="in"><button class="back" id="ab-back">← Back</button><button class="btn primary" id="ab-next"></button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>/* data/mtg-taxonomy.js */
+/* DeckMaster — MTG strategy taxonomy
+   ------------------------------------------------------------------
+   The matrix every builder control draws from. Each entry carries:
+     a   : color-pie affinity [W,U,B,R,G]  (3 primary · 2 secondary · 1 tertiary · 0 off-color)
+     q   : primary Scryfall fragment (may use oracle tags `otag:`)
+     fb  : fallback fragment using plain oracle text — used when `q`
+           errors or returns nothing, so a renamed Scryfall tag never
+           breaks a build
+     win : win modes this theme naturally feeds
+   Affinities follow the published color pie (Mark Rosewater's
+   "Mechanical Color Pie") as of 2026, rounded to whole steps.          */
+(function (root) {
+  const C = ['W', 'U', 'B', 'R', 'G'];
+
+  const FAMILIES = [
+    { id: 'pressure',  n: 'Pressure & combat' },
+    { id: 'denial',    n: 'Resource denial' },
+    { id: 'control',   n: 'Control & interaction' },
+    { id: 'yard',      n: 'Graveyard' },
+    { id: 'engine',    n: 'Engines & synergy' },
+    { id: 'permanent', n: 'Permanent types' },
+    { id: 'spells',    n: 'Spells matter' },
+    { id: 'mana',      n: 'Mana & lands' },
+    { id: 'mechanic',  n: 'Named mechanics' },
+  ];
+
+  const THEMES = [
+    // ── Pressure & combat
+    { id: 'aggro',      n: 'Aggro / weenie',          fam: 'pressure', a: [3,1,2,3,1], q: 't:creature mv<=2 pow>=2', fb: 't:creature mv<=2', d: 'Cheap efficient creatures, win before the opponent stabilizes.', win: ['beatdown','alpha'] },
+    { id: 'burn',       n: 'Burn',                    fam: 'pressure', a: [0,0,1,3,0], q: 'otag:burn', fb: '(o:"damage to any target" or o:"damage to each opponent" or o:"damage to target player")', d: 'Direct damage spells that double as removal and reach.', win: ['burn'] },
+    { id: 'tokens',     n: 'Tokens / go-wide',        fam: 'pressure', a: [3,1,1,1,2], q: 'otag:token-generator', fb: '(o:"create" o:"token")', d: 'Flood the board with bodies, then pump them.', win: ['alpha','swarm'] },
+    { id: 'anthems',    n: 'Anthems / overrun',       fam: 'pressure', a: [3,0,1,1,2], q: '(o:"creatures you control get +" or o:"other creatures you control get +")', fb: 'o:"creatures you control get"', d: 'Team-wide pumps turn a wide board lethal.', win: ['alpha'] },
+    { id: 'flyers',     n: 'Flyers / evasion',        fam: 'pressure', a: [3,3,2,1,0], q: 't:creature (kw:flying or kw:menace or o:"can\'t be blocked")', fb: 't:creature kw:flying', d: 'Win the air while ground creatures stall.', win: ['beatdown','air'] },
+    { id: 'stompy',     n: 'Big creatures / stompy',  fam: 'pressure', a: [0,0,1,2,3], q: 't:creature pow>=5', fb: 't:creature pow>=4', d: 'Ramp into creatures the opponent cannot block profitably.', win: ['beatdown','alpha'] },
+    { id: 'voltron',    n: 'Voltron (auras/equip)',   fam: 'pressure', a: [3,1,1,1,2], q: '(t:aura or t:equipment) o:"gets +"', fb: '(t:aura or t:equipment)', d: 'Load one hard-to-kill threat with auras or equipment.', win: ['voltron'] },
+    { id: 'extracombat',n: 'Extra combats',           fam: 'pressure', a: [1,0,0,3,1], q: 'o:"additional combat"', fb: 'o:"additional combat"', d: 'Untap and attack again.', win: ['alpha'] },
+    { id: 'goad',       n: 'Goad / forced combat',    fam: 'pressure', a: [0,0,1,3,0], q: '(kw:goad or o:"attacks each combat if able")', fb: 'kw:goad', d: 'Make opponents attack each other (multiplayer).', win: ['beatdown'] },
+
+    // ── Resource denial
+    { id: 'discard',    n: 'Discard / hand attack',   fam: 'denial',   a: [0,1,3,1,0], q: '(o:"target opponent discards" or o:"each opponent discards" or o:"target player discards" or o:"reveals their hand")', fb: 'o:"discards"', d: 'Strip the opponent\'s hand so they run out of options.', win: ['handlock','drain'] },
+    { id: 'mill',       n: 'Mill (opponent)',         fam: 'denial',   a: [0,3,2,0,1], q: '(otag:mill-opponent or (o:mill o:"target player") or o:"each opponent mills")', fb: '(o:"mills" or o:"mill")', d: 'Empty the opponent\'s library — they lose on their next draw.', win: ['decking'] },
+    { id: 'landdestruction', n: 'Land destruction',   fam: 'denial',   a: [1,0,1,3,2], q: '(otag:land-destruction or o:"destroy target land" or o:"destroy target nonbasic land" or o:"destroy all lands")', fb: '(o:"destroy target land" or o:"destroy all lands")', d: 'Cut the opponent off mana so they cannot cast spells.', win: ['lock','beatdown'] },
+    { id: 'stax',       n: 'Stax / tax',              fam: 'denial',   a: [3,1,1,1,0], q: '(o:"cost {1} more" or o:"more to cast" or o:"don\'t untap" or o:"doesn\'t untap" or o:"can\'t cast more than")', fb: 'o:"more to cast"', d: 'Symmetric taxes and restrictions you are built to break.', win: ['lock'] },
+    { id: 'wheels',     n: 'Wheels / hand-size punish', fam: 'denial', a: [0,2,2,3,0], q: '(o:"discards their hand" or o:"discard their hands" or o:"for each card in that player\'s hand" or o:"no cards in hand")', fb: 'o:"discards their hand"', d: 'Refill and punish full or empty hands.', win: ['burn','drain'] },
+    { id: 'theft',      n: 'Theft / steal',           fam: 'denial',   a: [0,3,2,2,0], q: 'o:"gain control of"', fb: 'o:"gain control of"', d: 'Take the opponent\'s best permanents.', win: ['beatdown'] },
+    { id: 'pillowfort', n: 'Pillow fort',             fam: 'denial',   a: [3,1,0,0,1], q: '(o:"can\'t attack you" or o:"attacks you" o:"unless")', fb: 'o:"can\'t attack you"', d: 'Make attacking you too expensive (multiplayer).', win: ['alt','lock'] },
+
+    // ── Control & interaction
+    { id: 'counters',   n: 'Counterspells / draw-go', fam: 'control',  a: [1,3,1,0,0], q: 'otag:counterspell', fb: 'o:"counter target"', d: 'Hold up answers, win with a few resilient threats.', win: ['lock','air'] },
+    { id: 'removal',    n: 'Removal-heavy control',   fam: 'control',  a: [3,1,3,2,1], q: 'otag:removal', fb: '(o:"destroy target creature" or o:"exile target creature" or o:"exile target nonland")', d: 'Kill everything, win late.', win: ['lock','beatdown'] },
+    { id: 'wipes',      n: 'Board wipes',             fam: 'control',  a: [3,1,3,2,0], q: '(otag:sweeper or o:"destroy all creatures" or o:"exile all creatures" or o:"all creatures get -")', fb: 'o:"destroy all"', d: 'Reset the board when behind.', win: ['lock'] },
+    { id: 'tempo',      n: 'Tempo / flash',           fam: 'control',  a: [1,3,1,1,0], q: '(kw:flash t:creature) or (o:"return target" o:"to its owner\'s hand")', fb: 'kw:flash', d: 'Cheap threats plus bounce and counters to stay a step ahead.', win: ['air','beatdown'] },
+    { id: 'tapdown',    n: 'Tap / freeze',            fam: 'control',  a: [3,3,0,0,0], q: '(o:"tap target" o:"doesn\'t untap") or o:"tap all creatures"', fb: 'o:"tap target"', d: 'Lock creatures down rather than kill them.', win: ['lock','air'] },
+
+    // ── Graveyard
+    { id: 'selfmill',   n: 'Self-mill / graveyard value', fam: 'yard', a: [0,2,3,0,3], q: '(otag:mill-self or (o:mill o:"you mill") or o:"from your graveyard")', fb: 'o:"from your graveyard"', d: 'Fill your own yard as a second hand.', win: ['beatdown','combo'] },
+    { id: 'reanimator', n: 'Reanimator',              fam: 'yard',     a: [1,0,3,0,1], q: '(otag:reanimate or o:"from a graveyard onto the battlefield" or o:"return target creature card from your graveyard to the battlefield")', fb: 'o:"graveyard to the battlefield"', d: 'Discard or mill a fatty, bring it back early.', win: ['beatdown'] },
+    { id: 'flashback',  n: 'Flashback / escape / recursion', fam: 'yard', a: [1,2,2,2,1], q: '(kw:flashback or kw:escape or kw:disturb or kw:unearth or kw:embalm)', fb: 'kw:flashback', d: 'Cards that work twice from the graveyard.', win: ['beatdown'] },
+    { id: 'delirium',   n: 'Delirium / threshold',    fam: 'yard',     a: [0,1,2,0,3], q: '(kw:delirium or kw:threshold or o:"card types among cards in your graveyard")', fb: 'kw:delirium', d: 'Payoffs for a diverse graveyard.', win: ['beatdown'] },
+    { id: 'madness',    n: 'Madness / self-discard',  fam: 'yard',     a: [0,1,2,3,0], q: '(kw:madness or o:"whenever you discard" or o:"as an additional cost to cast this spell, discard")', fb: 'kw:madness', d: 'Turn discarding into an advantage.', win: ['beatdown','burn'] },
+
+    // ── Engines & synergy
+    { id: 'aristocrats',n: 'Aristocrats / sacrifice', fam: 'engine',   a: [2,0,3,2,1], q: '(o:"sacrifice a creature" or o:"whenever a creature you control dies" or o:"whenever another creature you control dies")', fb: 'o:"sacrifice a creature"', d: 'Sac outlets plus death triggers that drain.', win: ['drain','combo'] },
+    { id: 'lifegain',   n: 'Lifegain',                fam: 'engine',   a: [3,0,2,0,1], q: '(otag:lifegain or o:"whenever you gain life")', fb: 'o:"gain" o:"life"', d: 'Gain life incidentally, cash it in with payoffs.', win: ['drain','beatdown'] },
+    { id: 'drain',      n: 'Drain / group slug',      fam: 'engine',   a: [1,0,3,2,0], q: '(o:"each opponent loses" or o:"target opponent loses")', fb: 'o:"loses" o:"life"', d: 'Life loss that ignores blockers.', win: ['drain'] },
+    { id: 'p1counters', n: '+1/+1 counters',          fam: 'engine',   a: [2,1,1,0,3], q: 'o:"+1/+1 counter"', fb: 'o:"+1/+1 counter"', d: 'Grow creatures; payoffs for counters.', win: ['beatdown','alpha'] },
+    { id: 'm1counters', n: '-1/-1 counters',          fam: 'engine',   a: [0,0,3,0,1], q: '(o:"-1/-1 counter" or kw:wither)', fb: 'o:"-1/-1 counter"', d: 'Shrink the opposing board.', win: ['beatdown'] },
+    { id: 'proliferate',n: 'Proliferate / counters matter', fam: 'engine', a: [1,2,1,0,1], q: 'kw:proliferate', fb: 'o:proliferate', d: 'Add more of every counter you have.', win: ['poison','walker'] },
+    { id: 'blink',      n: 'Blink / flicker / ETB',   fam: 'engine',   a: [3,3,0,0,1], q: '(otag:flicker or o:"return it to the battlefield" or o:"return that card to the battlefield")', fb: 'o:"return it to the battlefield"', d: 'Re-trigger enter-the-battlefield value.', win: ['beatdown','lock'] },
+    { id: 'clones',     n: 'Clones / copy',           fam: 'engine',   a: [0,3,0,1,1], q: '(o:"copy of" or o:"create a token that\'s a copy")', fb: 'o:"copy of"', d: 'Copy the best thing on the battlefield.', win: ['beatdown'] },
+    { id: 'extraturns', n: 'Extra turns',             fam: 'engine',   a: [0,3,0,1,0], q: 'o:"extra turn"', fb: 'o:"extra turn"', d: 'Take turns until the opponent cannot recover.', win: ['combo','lock'] },
+    { id: 'grouphug',   n: 'Group hug',               fam: 'engine',   a: [1,2,0,0,3], q: '(o:"each player draws" or o:"each player may put a land")', fb: 'o:"each player draws"', d: 'Give everyone resources, break parity (multiplayer).', win: ['alt','combo'] },
+    { id: 'treasure',   n: 'Treasure / food / clues', fam: 'engine',   a: [1,1,1,3,2], q: '(o:"create a treasure" or o:"create a food" or o:"create a clue" or o:"create a blood")', fb: 'o:treasure', d: 'Artifact tokens as fuel.', win: ['beatdown'] },
+    { id: 'tribal',     n: 'Tribal / kindred',        fam: 'engine',   a: [2,2,2,2,2], q: '(o:"choose a creature type" or o:"creatures of the chosen type" or o:"share a creature type")', fb: 'o:"creature type"', d: 'Lords and payoffs for one creature type — pair with a Tribe pick.', win: ['beatdown','alpha'] },
+    { id: 'chaos',      n: 'Chaos / coins & dice',    fam: 'engine',   a: [0,1,0,3,1], q: '(o:"flip a coin" or o:"roll a" o:d20 or o:"roll a six-sided")', fb: 'o:"flip a coin"', d: 'Random effects and payoffs for rolling.', win: ['beatdown'] },
+
+    // ── Permanent types
+    { id: 'artifacts',  n: 'Artifacts matter',        fam: 'permanent',a: [1,3,1,2,0], q: '(o:"artifact you control" or o:"whenever an artifact" or o:"for each artifact")', fb: 'o:"artifact you control"', d: 'Artifact count payoffs and synergies.', win: ['beatdown','combo'] },
+    { id: 'enchantress',n: 'Enchantress / constellation', fam: 'permanent', a: [3,1,1,0,3], q: '(kw:constellation or o:"whenever you cast an enchantment" or o:"enchantment spell" o:"draw")', fb: 'o:"enchantment you control"', d: 'Draw and grow off enchantments.', win: ['lock','alt'] },
+    { id: 'equipment',  n: 'Equipment',               fam: 'permanent',a: [3,0,1,2,0], q: '(t:equipment or o:"equipped creature")', fb: 't:equipment', d: 'Gear that outlives the creature wearing it.', win: ['voltron','beatdown'] },
+    { id: 'vehicles',   n: 'Vehicles',                fam: 'permanent',a: [2,1,1,2,1], q: '(t:vehicle or kw:crew)', fb: 't:vehicle', d: 'Big artifacts that dodge sorcery-speed wipes.', win: ['beatdown'] },
+    { id: 'sagas',      n: 'Sagas / historic',        fam: 'permanent',a: [2,2,1,1,1], q: '(t:saga or o:"historic spell")', fb: 't:saga', d: 'Legendaries, artifacts and sagas matter.', win: ['beatdown'] },
+    { id: 'superfriends',n:'Superfriends (planeswalkers)', fam: 'permanent', a: [2,2,2,2,2], q: '(t:planeswalker or o:"loyalty ability")', fb: 't:planeswalker', d: 'Stack planeswalkers and protect them.', win: ['walker','lock'] },
+    { id: 'battles',    n: 'Battles',                 fam: 'permanent',a: [1,1,1,2,1], q: 't:battle', fb: 't:battle', d: 'Attack your own battles for flipped value.', win: ['beatdown'] },
+
+    // ── Spells matter
+    { id: 'spellslinger',n:'Spellslinger / prowess',  fam: 'spells',   a: [1,3,0,3,0], q: '(kw:prowess or o:"whenever you cast an instant or sorcery" or o:"whenever you cast a noncreature spell")', fb: 'o:"instant or sorcery"', d: 'Cheap spells trigger creature payoffs.', win: ['burn','beatdown'] },
+    { id: 'storm',      n: 'Storm / copy spells',     fam: 'spells',   a: [0,3,0,3,0], q: '(kw:storm or o:"copy target instant or sorcery" or o:"copy that spell")', fb: 'kw:storm', d: 'Chain spells in one turn, copy the finisher.', win: ['combo','burn'] },
+    { id: 'cycling',    n: 'Cycling / card flow',     fam: 'spells',   a: [1,2,1,1,1], q: '(kw:cycling or o:"whenever you cycle")', fb: 'kw:cycling', d: 'Filter draws and trigger cycle payoffs.', win: ['beatdown'] },
+    { id: 'topdeck',    n: 'Top-deck / miracles',     fam: 'spells',   a: [2,3,0,1,1], q: '(kw:miracle or o:"look at the top card of your library" or o:"scry")', fb: 'kw:miracle', d: 'Manipulate the library top.', win: ['lock'] },
+    { id: 'impulse',    n: 'Impulse draw / exile-play', fam: 'spells', a: [0,0,1,3,0], q: '(o:"exile the top" o:"you may play")', fb: 'o:"you may play that card"', d: 'Red card advantage from exile.', win: ['burn','beatdown'] },
+
+    // ── Mana & lands
+    { id: 'ramp',       n: 'Ramp / big mana',         fam: 'mana',     a: [0,0,0,1,3], q: 'otag:ramp', fb: '(o:"search your library for a basic land" or (t:creature o:"add {"))', d: 'Accelerate into game-ending spells.', win: ['beatdown','alpha'] },
+    { id: 'landfall',   n: 'Landfall / lands matter', fam: 'mana',     a: [1,0,0,1,3], q: '(kw:landfall or o:"whenever a land you control enters" or o:"play an additional land")', fb: 'kw:landfall', d: 'Payoffs every time a land hits.', win: ['beatdown','alpha'] },
+    { id: 'domain',     n: 'Domain / 5-color',        fam: 'mana',     a: [1,1,1,1,3], q: '(kw:domain or o:"basic land types among lands you control")', fb: 'kw:domain', d: 'Reward running every basic type.', win: ['beatdown'] },
+    { id: 'devotion',   n: 'Devotion',                fam: 'mana',     a: [2,2,2,2,2], q: 'o:devotion', fb: 'o:devotion', d: 'Heavy colored pips power up payoffs.', win: ['drain','beatdown'] },
+    { id: 'colorless',  n: 'Eldrazi / colorless',     fam: 'mana',     a: [0,0,0,0,0], q: '(t:eldrazi or o:"colorless spell" or o:"{C}")', fb: 't:eldrazi', d: 'Colorless threats and the lands that make {C}.', win: ['beatdown','lock'] },
+
+    // ── Named mechanics
+    { id: 'infect',     n: 'Infect / toxic / poison', fam: 'mechanic', a: [1,1,2,0,3], q: '(kw:infect or kw:toxic or o:"poison counter")', fb: 'kw:infect', d: 'Ten poison counters instead of twenty damage.', win: ['poison'] },
+    { id: 'energy',     n: 'Energy',                  fam: 'mechanic', a: [1,2,1,2,2], q: 'o:"{E}"', fb: 'o:energy', d: 'Bank energy, spend it on big turns.', win: ['beatdown'] },
+    { id: 'ninjas',     n: 'Ninjutsu / unblocked',    fam: 'mechanic', a: [0,3,3,0,0], q: '(kw:ninjutsu or o:"deals combat damage to a player")', fb: 'kw:ninjutsu', d: 'Swap unblocked attackers for payoff creatures.', win: ['air','beatdown'] },
+    { id: 'faceDown',   n: 'Morph / disguise / manifest', fam: 'mechanic', a: [1,2,1,1,2], q: '(kw:morph or kw:megamorph or kw:disguise or kw:manifest or o:"cloak")', fb: 'kw:morph', d: 'Face-down creatures with surprise flips.', win: ['beatdown'] },
+    { id: 'snow',       n: 'Snow',                    fam: 'mechanic', a: [1,2,1,1,2], q: '(t:snow or o:"{S}")', fb: 't:snow', d: 'Snow permanents and snow-mana payoffs.', win: ['beatdown','lock'] },
+    { id: 'monarch',    n: 'Monarch / initiative',    fam: 'mechanic', a: [2,1,2,1,1], q: '(o:"the monarch" or o:"the initiative")', fb: 'o:monarch', d: 'Keep the crown, keep drawing.', win: ['beatdown'] },
+    { id: 'adventure',  n: 'Adventure / omen',        fam: 'mechanic', a: [2,2,2,2,2], q: '(t:adventure or t:omen)', fb: 't:adventure', d: 'Two-in-one spell + creature cards.', win: ['beatdown'] },
+    { id: 'mutate',     n: 'Mutate / outlast',        fam: 'mechanic', a: [1,2,1,1,3], q: '(kw:mutate or kw:outlast)', fb: 'kw:mutate', d: 'Stack abilities onto one creature.', win: ['voltron'] },
+    { id: 'convoke',    n: 'Convoke / improvise',     fam: 'mechanic', a: [3,1,1,0,3], q: '(kw:convoke or kw:improvise or kw:affinity)', fb: 'kw:convoke', d: 'Creatures/artifacts pay for spells.', win: ['alpha'] },
+    { id: 'party',      n: 'Party / class roles',     fam: 'mechanic', a: [2,2,2,2,1], q: '(o:"full party" or o:"your party")', fb: 'o:party', d: 'Cleric, Rogue, Warrior, Wizard payoffs.', win: ['beatdown'] },
+  ];
+
+  /* Win modes — how the deck actually ends the game.
+     q pulls finishers; theme ties come from THEMES[].win            */
+  const WIN_MODES = [
+    { id: 'beatdown', n: 'Combat beatdown',            q: 't:creature pow>=3 mv<=4', fb: 't:creature pow>=3', d: 'Reduce life to 0 with creature damage.' },
+    { id: 'air',      n: 'Evasive air force',          q: 't:creature kw:flying pow>=2', fb: 't:creature kw:flying', d: 'Flyers and unblockables close the game.' },
+    { id: 'alpha',    n: 'Alpha strike / overrun',     q: '(o:"creatures you control get +" o:trample) or o:"creatures you control gain trample"', fb: 'o:"creatures you control get +"', d: 'One huge team-pump turn.' },
+    { id: 'swarm',    n: 'Token swarm',                q: '(o:"create" o:"tokens") (o:"for each" or o:"X ")', fb: 'o:"create" o:"tokens"', d: 'Overwhelm with a token wave.' },
+    { id: 'burn',     n: 'Burn to the face',           q: '(o:"damage to any target" or o:"damage to each opponent")', fb: 'o:"damage to any target"', d: 'Spells point at the player\'s head.' },
+    { id: 'drain',    n: 'Drain / life loss',          q: '(o:"each opponent loses" o:life)', fb: 'o:"loses" o:"life"', d: 'Incremental life loss; no combat needed.' },
+    { id: 'decking',  n: 'Deck-out (mill)',            q: '(o:"mills" o:"target player") or o:"each opponent mills" or o:"mill half"', fb: 'o:mills', d: 'Opponent loses drawing from an empty library.' },
+    { id: 'poison',   n: 'Poison counters',            q: '(kw:infect or kw:toxic or o:"poison counter")', fb: 'kw:infect', d: 'Ten poison counters wins.' },
+    { id: 'handlock', n: 'Hand lock → finish',         q: '(o:"each opponent discards" or o:"target opponent discards") or (o:"for each card" o:"fewer cards in hand")', fb: 'o:discards', d: 'Empty their hand, then punish the topdeck.' },
+    { id: 'lock',     n: 'Control lock, late finisher',q: 't:creature mv>=5 (kw:flying or kw:hexproof or o:"can\'t be countered")', fb: 't:creature mv>=5', d: 'Answer everything; one big threat ends it.' },
+    { id: 'voltron',  n: 'Voltron / commander damage', q: '(t:equipment or t:aura) (o:"double strike" or o:"+3/+3" or o:"+2/+2" or o:hexproof)', fb: 't:equipment', d: 'One suited-up threat (21 commander damage in EDH).' },
+    { id: 'walker',   n: 'Planeswalker ultimates',     q: 't:planeswalker', fb: 't:planeswalker', d: 'Protect walkers until an ultimate wins.' },
+    { id: 'alt',      n: 'Alternate win cards',        q: 'o:"you win the game"', fb: 'o:"win the game"', d: 'Cards that say "you win the game".' },
+    { id: 'combo',    n: 'Combo engine',               q: '(o:"untap all" or o:"untap target permanent" or o:"whenever a creature enters" o:"each opponent loses")', fb: 'o:"untap target"', d: 'Assemble pieces for a (near-)infinite loop.' },
+  ];
+
+  /* Formats → Scryfall legality + deck shape */
+  const FORMATS = [
+    { id: 'standard',  n: 'Standard',      f: 'standard',  size: 60,  singleton: false, cmdr: false },
+    { id: 'pioneer',   n: 'Pioneer',       f: 'pioneer',   size: 60,  singleton: false, cmdr: false },
+    { id: 'modern',    n: 'Modern',        f: 'modern',    size: 60,  singleton: false, cmdr: false },
+    { id: 'legacy',    n: 'Legacy',        f: 'legacy',    size: 60,  singleton: false, cmdr: false },
+    { id: 'pauper',    n: 'Pauper',        f: 'pauper',    size: 60,  singleton: false, cmdr: false },
+    { id: 'commander', n: 'Commander',     f: 'commander', size: 100, singleton: true,  cmdr: true },
+    { id: 'brawl',     n: 'Standard Brawl',f: 'standardbrawl', size: 60, singleton: true, cmdr: true },
+    { id: 'casual',    n: 'Casual (any card)', f: null,    size: 60,  singleton: false, cmdr: false },
+  ];
+
+  /* Color identities — every one of the 32 combinations, named */
+  const IDENTITIES = [
+    { id: 'c', n: 'Colorless', tier: 'colorless' },
+    { id: 'w', n: 'Mono-White', tier: 'mono' }, { id: 'u', n: 'Mono-Blue', tier: 'mono' }, { id: 'b', n: 'Mono-Black', tier: 'mono' }, { id: 'r', n: 'Mono-Red', tier: 'mono' }, { id: 'g', n: 'Mono-Green', tier: 'mono' },
+    { id: 'wu', n: 'Azorius', tier: 'dual' }, { id: 'ub', n: 'Dimir', tier: 'dual' }, { id: 'br', n: 'Rakdos', tier: 'dual' }, { id: 'rg', n: 'Gruul', tier: 'dual' }, { id: 'wg', n: 'Selesnya', tier: 'dual' },
+    { id: 'wb', n: 'Orzhov', tier: 'dual' }, { id: 'ur', n: 'Izzet', tier: 'dual' }, { id: 'bg', n: 'Golgari', tier: 'dual' }, { id: 'wr', n: 'Boros', tier: 'dual' }, { id: 'ug', n: 'Simic', tier: 'dual' },
+    { id: 'wug', n: 'Bant', tier: 'tri' }, { id: 'wub', n: 'Esper', tier: 'tri' }, { id: 'ubr', n: 'Grixis', tier: 'tri' }, { id: 'brg', n: 'Jund', tier: 'tri' }, { id: 'wrg', n: 'Naya', tier: 'tri' },
+    { id: 'wbg', n: 'Abzan', tier: 'tri' }, { id: 'wur', n: 'Jeskai', tier: 'tri' }, { id: 'ubg', n: 'Sultai', tier: 'tri' }, { id: 'wbr', n: 'Mardu', tier: 'tri' }, { id: 'urg', n: 'Temur', tier: 'tri' },
+    { id: 'ubrg', n: 'Glint (non-W)', tier: 'four' }, { id: 'wbrg', n: 'Dune (non-U)', tier: 'four' }, { id: 'wurg', n: 'Ink (non-B)', tier: 'four' }, { id: 'wubg', n: 'Witch (non-R)', tier: 'four' }, { id: 'wubr', n: 'Yore (non-G)', tier: 'four' },
+    { id: 'wubrg', n: 'Five-color', tier: 'five' },
+  ];
+
+  const ERAS = [
+    { id: 'oldschool', n: 'Old School (1993–94)',     q: 'year<=1994' },
+    { id: 'premodern', n: 'Premodern (1995–2003)',    q: 'year>=1995 year<=2003' },
+    { id: 'modernold', n: 'Classic modern frame (2003–2011)', q: 'year>=2003 year<=2011' },
+    { id: 'pioneerera',n: 'Pioneer era (2012–2018)',  q: 'year>=2012 year<=2018' },
+    { id: 'modernday', n: 'Modern day (2019–2023)',   q: 'year>=2019 year<=2023' },
+    { id: 'recent',    n: 'Recent (2024–2026)',       q: 'year>=2024' },
+  ];
+
+  /* Settings / season flavor — plane or vibe, by set code */
+  const SETTINGS = [
+    { id: 'spooky',     n: 'Spooky season (Innistrad · Duskmourn)', q: '(e:isd or e:dka or e:avr or e:soi or e:emn or e:mid or e:vow or e:dsk)' },
+    { id: 'winter',     n: 'Winter (snow · Kaldheim · Coldsnap)',    q: '(t:snow or e:khm or e:csp or e:ice)' },
+    { id: 'woodland',   n: 'Woodland critters (Bloomburrow)',         q: '(e:blb)' },
+    { id: 'fairytale',  n: 'Fairy tale (Eldraine · Lorwyn)',         q: '(e:eld or e:woe or e:lrw or e:mor or e:shm or e:eve or e:ecl)' },
+    { id: 'myth',       n: 'Greek myth (Theros)',                    q: '(e:ths or e:bng or e:jou or e:thb)' },
+    { id: 'ravnica',    n: 'City guilds (Ravnica)',                  q: '(e:rav or e:gpt or e:dis or e:rtr or e:gtc or e:dgm or e:grn or e:rna or e:war or e:mkm)' },
+    { id: 'zendikar',   n: 'Adventure world (Zendikar)',             q: '(e:zen or e:wwk or e:roe or e:bfz or e:ogw or e:znr)' },
+    { id: 'dominaria',  n: 'Legacy plane (Dominaria)',               q: '(e:dom or e:dmu)' },
+    { id: 'kamigawa',   n: 'Spirits & neon (Kamigawa)',              q: '(e:chk or e:bok or e:sok or e:neo)' },
+    { id: 'ixalan',     n: 'Pirates & dinosaurs (Ixalan)',           q: '(e:xln or e:rix or e:lci)' },
+    { id: 'phyrexia',   n: 'Phyrexian invasion',                     q: '(e:nph or e:one or e:mom or e:som or e:mbs)' },
+    { id: 'tarkir',     n: 'Dragons (Tarkir)',                       q: '(e:ktk or e:frf or e:dtk or e:tdm)' },
+    { id: 'desert',     n: 'Desert & gods (Amonkhet · Thunder Junction)', q: '(e:akh or e:hou or e:otj)' },
+    { id: 'artifice',   n: 'Inventors (Kaladesh · Aetherdrift)',     q: '(e:kld or e:aer or e:dft)' },
+    { id: 'school',     n: 'Magic school (Strixhaven)',              q: '(e:stx)' },
+    { id: 'space',      n: 'Sci-fi (Edge of Eternities)',            q: '(e:eoe)' },
+    { id: 'middleearth',n: 'Middle-earth (LTR · The Hobbit)',        q: '(e:ltr or e:hob)' },
+  ];
+
+  /* Fallback tribe list — the live list loads from Scryfall's catalog */
+  const TRIBES_FALLBACK = ['Advisor','Angel','Ape','Artificer','Assassin','Avatar','Bat','Bear','Beast','Bird','Cat','Centaur','Cleric','Construct','Crab','Demon','Detective','Devil','Dinosaur','Djinn','Dog','Dragon','Drake','Druid','Dwarf','Eldrazi','Elemental','Elephant','Elf','Faerie','Fish','Fox','Frog','Fungus','Giant','Gnome','Goat','Goblin','God','Golem','Gorgon','Halfling','Horror','Horse','Human','Hydra','Illusion','Imp','Insect','Kithkin','Knight','Kraken','Lizard','Merfolk','Minotaur','Monk','Mouse','Mutant','Ninja','Noble','Octopus','Ogre','Ooze','Orc','Otter','Phoenix','Phyrexian','Pilot','Pirate','Rabbit','Raccoon','Rat','Robot','Rogue','Samurai','Saproling','Satyr','Scarecrow','Serpent','Shade','Shaman','Shapeshifter','Skeleton','Sliver','Snake','Soldier','Sphinx','Spider','Spirit','Squirrel','Treefolk','Troll','Unicorn','Vampire','Vedalken','Wall','Warlock','Warrior','Werewolf','Wizard','Wolf','Wurm','Zombie'];
+
+  const SPEEDS = [
+    { id: 'aggro', n: 'Aggro (fast, low curve)', lands60: 22, curve: { 1: .20, 2: .34, 3: .24, 4: .14, 5: .08 } },
+    { id: 'mid',   n: 'Midrange (balanced)',     lands60: 24, curve: { 1: .10, 2: .24, 3: .26, 4: .22, 5: .18 } },
+    { id: 'ctrl',  n: 'Control (slow, late game)', lands60: 26, curve: { 1: .08, 2: .26, 3: .22, 4: .20, 5: .24 } },
+  ];
+
+  const BUDGETS = [
+    { id: 'any', n: 'No cap', usd: null },
+    { id: 'b20', n: '≤ $20 / card', usd: 20 },
+    { id: 'b5',  n: '≤ $5 / card',  usd: 5 },
+    { id: 'b1',  n: '≤ $1 / card (budget)', usd: 1 },
+  ];
+
+  /* Rank color combos for a set of themes by summed affinity. */
+  function rankIdentities(themeIds, tier) {
+    const picked = THEMES.filter(t => themeIds.includes(t.id));
+    if (!picked.length) return [];
+    const aff = [0,0,0,0,0];
+    picked.forEach((t, i) => t.a.forEach((v, k) => aff[k] += v * (i === 0 ? 1.5 : 1)));
+    return IDENTITIES
+      .filter(x => x.id !== 'c' && (!tier || x.tier === tier))
+      .map(x => {
+        const idx = x.id.split('').map(ch => 'wubrg'.indexOf(ch));
+        // average, with a small penalty for every extra color (consistency cost)
+        const s = idx.reduce((a, k) => a + aff[k], 0) / idx.length - (idx.length - 1) * 0.35;
+        const min = Math.min(...idx.map(k => aff[k]));
+        return { ...x, score: s + min * 0.25 };
+      })
+      .sort((a, b) => b.score - a.score);
+  }
+
+  root.MTG_TAX = { C, FAMILIES, THEMES, WIN_MODES, FORMATS, IDENTITIES, ERAS, SETTINGS, TRIBES_FALLBACK, SPEEDS, BUDGETS, rankIdentities };
+  if (typeof module !== 'undefined') module.exports = root.MTG_TAX;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/engine.js */
+/* DeckMaster — deck construction engine
+   ------------------------------------------------------------------
+   Pure logic + a pluggable fetcher, so it runs in the browser and in
+   Node tests. Pipeline:
+     1. plan()      selections → role list with Scryfall queries
+     2. gather()    run each role query (fallback on error/empty)
+     3. assemble()  greedy, need-weighted pick + mana base
+     4. estimate()  inferred strength index → projected win %
+   Confidence follows the project's tagging rule: nothing here is
+   "official"; the win % is always labelled `inferred`.              */
+(function (root) {
+  const TAX = root.MTG_TAX || (typeof require !== 'undefined' ? require('../data/mtg-taxonomy.js') : null);
+  const API = 'https://api.scryfall.com';
+  const BASICS = { w: 'Plains', u: 'Island', b: 'Swamp', r: 'Mountain', g: 'Forest', c: 'Wastes' };
+  const MAX_DRIVERS = 10;
+
+  /* ── helpers ───────────────────────────────────────────── */
+  const wrap = s => `(${s})`;
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const byId = (list, id) => list.find(x => x.id === id);
+
+  function driverCount(sel) {
+    return (sel.themes || []).length + (sel.wins || []).length + (sel.tribes || []).length +
+      (sel.era ? 1 : 0) + (sel.setting ? 1 : 0);
+  }
+
+  function normalize(c) {
+    const face = (c.card_faces && c.card_faces[0]) || {};
+    const img = (c.image_uris && c.image_uris.normal) || (face.image_uris && face.image_uris.normal) || null;
+    const oracle = c.oracle_text != null ? c.oracle_text :
+      (c.card_faces || []).map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n—\n');
+    const p = c.prices || {};
+    const price = parseFloat(p.usd || p.usd_etched || p.usd_foil || '') || null;
+    return {
+      name: c.name,
+      mv: c.cmc || 0,
+      mana: c.mana_cost != null ? c.mana_cost : (face.mana_cost || ''),
+      type: c.type_line || '',
+      oracle,
+      pt: c.power != null ? `${c.power}/${c.toughness}` : (face.power != null ? `${face.power}/${face.toughness}` : ''),
+      img,
+      price,
+      set: (c.set || '').toUpperCase(),
+      rarity: c.rarity || '',
+      edh: c.edhrec_rank || null,
+      ci: (c.color_identity || []).join('').toLowerCase(),
+      produced: (c.produced_mana || []).join('').toLowerCase(),
+      legendary: /Legendary/.test(c.type_line || ''),
+      buy: c.purchase_uris || {},
+      uri: c.scryfall_uri || '',
+    };
+  }
+
+  // 0.05..1 quality from EDHREC rank (log scale, ~35k ranked cards)
+  function quality(card) {
+    if (!card.edh) return 0.28;
+    return clamp(1 - Math.log(card.edh) / Math.log(35000), 0.05, 1);
+  }
+
+  const bucket = mv => clamp(Math.round(mv) || 1, 1, 5);
+  const isCreature = c => /Creature/.test(c.type);
+
+  /* ── 1. plan ───────────────────────────────────────────── */
+  function plan(sel) {
+    const fmt = byId(TAX.FORMATS, sel.format) || TAX.FORMATS[0];
+    const speed = byId(TAX.SPEEDS, sel.speed) || TAX.SPEEDS[1];
+    const budget = byId(TAX.BUDGETS, sel.budget) || TAX.BUDGETS[0];
+    const colors = (sel.colors || '').toLowerCase() || 'c';
+
+    let base = 'game:paper -t:basic';
+    if (fmt.f) base += ` f:${fmt.f}`;
+    base += ` id<=${colors}`;
+    if (budget.usd) base += ` usd<=${budget.usd}`;
+    const nonland = `${base} -t:land`;
+
+    const flavorParts = [];
+    const era = sel.era && byId(TAX.ERAS, sel.era);
+    const setting = sel.setting && byId(TAX.SETTINGS, sel.setting);
+    if (era) flavorParts.push(era.q);
+    if (setting) flavorParts.push(setting.q);
+    const flavor = flavorParts.join(' ');
+
+    const size = fmt.size;
+    let lands = fmt.cmdr && size === 100 ? { aggro: 35, mid: 37, ctrl: 38 }[speed.id] : speed.lands60;
+    if (sel.colors && sel.colors.length >= 3) lands += size === 100 ? 0 : 1;
+    const nonlandSlots = size - lands - (fmt.cmdr ? 1 : 0);
+
+    const roles = [];
+    const themes = (sel.themes || []).map(id => byId(TAX.THEMES, id)).filter(Boolean);
+    themes.forEach((t, i) => roles.push({
+      key: 'theme:' + t.id, label: t.n, kind: 'theme',
+      weight: i === 0 ? 3 : 1.6, need: Math.ceil(nonlandSlots * (i === 0 ? 0.36 : 0.15)),
+      q: `${nonland} ${wrap(t.q)} ${flavor}`, fb: `${nonland} ${wrap(t.fb)} ${flavor}`,
+    }));
+    (sel.wins || []).map(id => byId(TAX.WIN_MODES, id)).filter(Boolean).forEach(w => roles.push({
+      key: 'win:' + w.id, label: w.n, kind: 'win',
+      weight: 2, need: Math.ceil(nonlandSlots * 0.12),
+      q: `${nonland} ${wrap(w.q)} ${flavor}`, fb: `${nonland} ${wrap(w.fb)}`,
+    }));
+    const tribes = sel.tribes || [];
+    tribes.forEach(tr => {
+      const t = tr.toLowerCase().replace(/"/g, '');
+      roles.push({
+        key: 'tribe:' + tr, label: tr + ' (tribe)', kind: 'tribe',
+        weight: 2.4, need: Math.ceil(nonlandSlots * 0.32 / tribes.length),
+        q: `${nonland} (t:"${t}" or o:"${t}") ${flavor}`, fb: `${nonland} (t:"${t}" or o:"${t}")`,
+      });
+    });
+
+    // Flavor widening: same primary theme without era/setting, lower weight
+    if (flavor && !sel.strict && themes[0]) roles.push({
+      key: 'wide:' + themes[0].id, label: themes[0].n + ' (any era/setting)', kind: 'theme',
+      weight: 1.0, need: Math.ceil(nonlandSlots * 0.2),
+      q: `${nonland} ${wrap(themes[0].q)}`, fb: `${nonland} ${wrap(themes[0].fb)}`,
+    });
+
+    // Support packages every deck needs
+    const supFlavor = sel.strict ? flavor : '';
+    const iShare = { aggro: 0.13, mid: 0.18, ctrl: 0.26 }[speed.id];
+    const hasU = colors.includes('u');
+    roles.push({
+      key: 'sup:interaction', label: 'Interaction', kind: 'support',
+      weight: 1.25, need: Math.ceil(nonlandSlots * iShare),
+      q: `${nonland} ${hasU ? '(otag:removal or otag:counterspell)' : 'otag:removal'} ${supFlavor}`,
+      fb: `${nonland} (o:"destroy target" or o:"exile target" or o:"counter target" or o:"damage to target creature") ${supFlavor}`,
+    });
+    roles.push({
+      key: 'sup:draw', label: 'Card advantage', kind: 'support',
+      weight: 0.9, need: Math.ceil(nonlandSlots * (speed.id === 'ctrl' ? 0.12 : 0.07)),
+      q: `${nonland} otag:card-advantage ${supFlavor}`, fb: `${nonland} o:"draw" o:"card" ${supFlavor}`,
+    });
+    if (fmt.cmdr || (sel.themes || []).includes('ramp') || speed.id === 'ctrl') roles.push({
+      key: 'sup:ramp', label: 'Ramp', kind: 'support',
+      weight: 0.9, need: fmt.cmdr && size === 100 ? 10 : Math.ceil(nonlandSlots * 0.06),
+      q: `${nonland} otag:ramp ${supFlavor}`, fb: `${nonland} (o:"add {" or o:"search your library for a basic land") ${supFlavor}`,
+    });
+    roles.push({
+      key: 'sup:staples', label: 'Format staples', kind: 'support',
+      weight: 0.35, need: nonlandSlots,
+      q: `${nonland} ${supFlavor}`, fb: `${nonland}`,
+    });
+
+    const landQ = `${base} t:land`;
+    let commanderQ = null;
+    if (fmt.cmdr) {
+      const keys = themes.map(t => wrap(t.q)).concat(tribes.map(t => `t:"${t.toLowerCase()}"`));
+      const synergy = keys.length ? ` (${keys.join(' or ')})` : '';
+      commanderQ = {
+        q: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors}${synergy}${budget.usd ? ' usd<=' + budget.usd : ''}`,
+        fb: `game:paper is:commander ${fmt.f ? 'f:' + fmt.f : ''} id=${colors}`,
+      };
+    }
+    return { fmt, speed, budget, colors, size, lands, nonlandSlots, roles, landQ, commanderQ, flavor };
+  }
+
+  /* ── 2. gather ─────────────────────────────────────────── */
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* Network health for one build. A query that errors (network, CORS,
+     sandbox, 5xx) is NOT the same as a query with zero matches — the
+     first means "can't build", the second means "loosen filters".      */
+  function newHealth() { return { ok: 0, empty: 0, failed: 0, lastError: '' }; }
+
+  async function scryfallSearch(fetcher, q, health) {
+    const url = `${API}/cards/search?order=edhrec&unique=cards&q=${encodeURIComponent(q.replace(/\s+/g, ' ').trim())}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let res;
+      try { res = await fetcher(url); }
+      catch (e) { // TypeError: Failed to fetch / Load failed (Safari) — blocked or offline
+        if (attempt < 1) { await sleep(600); continue; }
+        const err = new Error('network'); err.kind = 'network'; throw err;
+      }
+      if (res.status === 429 || res.status >= 500) { await sleep(1000 * (attempt + 1)); continue; }
+      if (res.status === 404) { if (health) health.empty++; return []; }
+      if (!res.ok) { const e = new Error('Scryfall ' + res.status); e.kind = 'query'; e.status = res.status; throw e; }
+      const j = await res.json();
+      if (health) health.ok++;
+      return ((j && j.data) || []).map(normalize);
+    }
+    const err = new Error('Scryfall busy'); err.kind = 'network'; throw err;
+  }
+
+  async function searchWithFallback(fetcher, q, fb, notes, label, health) {
+    try {
+      const r = await scryfallSearch(fetcher, q, health);
+      if (r.length) return r;
+    } catch (e) {
+      if (e.kind === 'network') { health.failed++; health.lastError = e.message; return []; }
+      /* query error (e.g. renamed tag) → try fallback */
+    }
+    if (!fb || fb === q) return [];
+    try {
+      const r = await scryfallSearch(fetcher, fb, health);
+      if (notes && r.length) notes.push(`${label}: used plain-text fallback query.`);
+      return r;
+    } catch (e) {
+      if (e.kind === 'network') { health.failed++; health.lastError = e.message; }
+      else if (notes) notes.push(`${label}: search rejected (${e.message}).`);
+      return [];
+    }
+  }
+
+  async function ping(fetcher) {
+    try { const r = await fetcher(`${API}/cards/named?exact=${encodeURIComponent('Lightning Bolt')}`); return r.ok; }
+    catch (e) { return false; }
+  }
+
+  async function gather(p, fetcher, onProgress, delay = 150) {
+    const notes = [];
+    const results = {};
+    const health = newHealth();
+    const total = p.roles.length + 1 + (p.commanderQ ? 1 : 0);
+    let done = 0;
+    const tick = label => onProgress && onProgress(++done, total, label);
+    const unreachable = () => {
+      const e = new Error('Could not reach the Scryfall card database.');
+      e.kind = 'network'; return e;
+    };
+    let commander = null;
+    if (p.commanderQ) {
+      const cands = await searchWithFallback(fetcher, p.commanderQ.q, p.commanderQ.fb, notes, 'Commander', health);
+      if (health.failed && !health.ok) throw unreachable();
+      commander = cands[0] || null;
+      if (!commander) notes.push('No legal commander found in that exact color identity.');
+      tick('Commander'); await sleep(delay);
+    }
+    for (const r of p.roles) {
+      results[r.key] = await searchWithFallback(fetcher, r.q, r.fb, notes, r.label, health);
+      // first role failing at the network level with nothing succeeding → stop early, don't fake a deck
+      if (health.failed && !health.ok) throw unreachable();
+      if (!results[r.key].length && r.kind !== 'support') notes.push(p.flavor && !r.key.startsWith('wide:')
+        ? `${r.label}: nothing in the chosen era/setting${p.roles.some(x => x.key.startsWith('wide:')) ? ' — filled from any era' : ''}.`
+        : `${r.label}: nothing legal matched — try other colors or loosen filters.`);
+      tick(r.label); await sleep(delay);
+    }
+    const landCards = await searchWithFallback(fetcher, p.landQ, null, notes, 'Lands', health);
+    tick('Mana base');
+    if (health.failed) notes.push(`${health.failed} search(es) failed to connect — the list may be thinner than normal. Rebuild to retry.`);
+    return { results, landCards, commander, notes, health };
+  }
+
+  /* ── 3. assemble ───────────────────────────────────────── */
+  function buildPool(p, results) {
+    const pool = new Map();
+    for (const r of p.roles) {
+      const list = results[r.key] || [];
+      list.forEach((card, idx) => {
+        if (/Basic/.test(card.type) && /Land/.test(card.type)) return;
+        let e = pool.get(card.name);
+        if (!e) { e = { card, roles: {} }; pool.set(card.name, e); }
+        e.roles[r.key] = 1 - idx / Math.max(list.length, 1); // relevance within role
+      });
+    }
+    return pool;
+  }
+
+  function score(entry, p, need, curve, picked) {
+    const q = quality(entry.card);
+    let synergy = 0, nonSupport = 0;
+    for (const r of p.roles) {
+      const rel = entry.roles[r.key];
+      if (rel == null) continue;
+      const frac = r.need ? Math.max(need[r.key], 0) / r.need : 0;
+      synergy += r.weight * frac * (0.6 + 0.4 * rel);
+      if (r.kind !== 'support') nonSupport++;
+    }
+    const multi = nonSupport >= 2 ? 1 + 0.15 * (nonSupport - 1) : 1;
+    const b = bucket(entry.card.mv);
+    const target = p.speed.curve[b] * p.nonlandSlots;
+    const ratio = (curve[b] || 0) / Math.max(target, 0.5);
+    const curveMult = ratio < 0.8 ? 1.15 : ratio > 1.35 ? 0.6 : 1;
+    // aggro decks dislike 5+ drops; control dislikes vanilla 1-drops
+    const speedMult = p.speed.id === 'aggro' && entry.card.mv >= 5 ? 0.6 : 1;
+    return q * (0.35 + synergy) * multi * curveMult * speedMult;
+  }
+
+  function copiesFor(order, p, card) {
+    if (p.fmt.singleton) return 1;
+    let n = order < 8 ? 4 : order < 13 ? 3 : 2;
+    if (card.legendary) n = Math.min(n, 2);
+    return n;
+  }
+
+  function assemble(p, gathered) {
+    const { results, landCards, commander } = gathered;
+    const notes = (gathered.notes || []).slice();
+    const pool = buildPool(p, results);
+    if (commander) pool.delete(commander.name);
+    const need = {}; p.roles.forEach(r => need[r.key] = r.need);
+    const curve = {};
+    const picks = [];
+    let filled = 0, order = 0;
+    const used = new Set();
+
+    while (filled < p.nonlandSlots) {
+      let best = null, bestS = -1;
+      for (const [name, e] of pool) {
+        if (used.has(name)) continue;
+        const s = score(e, p, need, curve, picks);
+        if (s > bestS) { bestS = s; best = e; }
+      }
+      if (!best) break;
+      let n = Math.min(copiesFor(order, p, best.card), p.nonlandSlots - filled);
+      used.add(best.card.name);
+      picks.push({ card: best.card, qty: n, roles: Object.keys(best.roles), s: bestS });
+      for (const k of Object.keys(best.roles)) need[k] -= n;
+      const b = bucket(best.card.mv); curve[b] = (curve[b] || 0) + n;
+      filled += n; order++;
+    }
+    if (!picks.length) {
+      const e = new Error('No spells matched these choices. Try fewer drivers, more colors, a wider format (Casual / Commander), or turn off Strict flavor.');
+      e.kind = 'empty'; throw e;
+    }
+    if (filled < p.nonlandSlots) notes.push(`Only ${filled} of ${p.nonlandSlots} spell slots could be filled — loosen filters or add colors.`);
+
+    // ── mana base
+    const lands = manaBase(p, landCards, picks, commander, notes);
+    const deck = {
+      sel: null, plan: { size: p.size, format: p.fmt.id, colors: p.colors, speed: p.speed.id, lands: p.lands },
+      commander: commander ? { card: commander, qty: 1, roles: ['commander'] } : null,
+      spells: picks, lands, notes,
+      pool: [...pool.values()].map(e => ({ card: e.card, roles: Object.keys(e.roles), s: score(e, p, Object.fromEntries(p.roles.map(r => [r.key, r.need])), {}, []) })),
+      roles: p.roles.map(r => ({ key: r.key, label: r.label, kind: r.kind, need: r.need })),
+    };
+    deck.estimate = estimate(deck, p);
+    return deck;
+  }
+
+  function pips(cards) {
+    const n = { w: 0, u: 0, b: 0, r: 0, g: 0 };
+    cards.forEach(({ card, qty }) => {
+      (card.mana.match(/\{[^}]+\}/g) || []).forEach(sym => {
+        const s = sym.slice(1, -1).toLowerCase();
+        const parts = s.split('/').filter(x => 'wubrg'.includes(x));
+        parts.forEach(x => n[x] += qty / parts.length);
+      });
+    });
+    return n;
+  }
+
+  function manaBase(p, landCards, picks, commander, notes) {
+    const cols = p.colors === 'c' ? [] : p.colors.split('');
+    const allowed = new Set(cols.concat(['c']));
+    const out = [];
+    let nonbasicMax;
+    if (p.fmt.singleton) nonbasicMax = cols.length <= 1 ? 4 : Math.min(p.lands - cols.length * 3, 10 + 3 * (cols.length - 2));
+    else nonbasicMax = cols.length <= 1 ? 0 : cols.length === 2 ? 8 : cols.length === 3 ? 12 : 14;
+    let nb = 0;
+    for (const l of (landCards || [])) {
+      if (nb >= nonbasicMax) break;
+      if (/Basic/.test(l.type)) continue;
+      const prod = (l.produced || '').split('').filter(Boolean);
+      if (!prod.length) continue;
+      if (prod.some(x => !allowed.has(x))) continue;
+      const ours = prod.filter(x => cols.includes(x)).length;
+      if (cols.length >= 2 && ours < 2) continue;
+      if (cols.length === 1 && ours < 1 && !prod.includes('c')) continue;
+      const qty = p.fmt.singleton || l.legendary ? 1 : Math.min(4, nonbasicMax - nb);
+      out.push({ card: l, qty, roles: ['land'] }); nb += qty;
+    }
+    const basicsN = p.lands - nb;
+    const all = picks.concat(commander ? [{ card: commander, qty: 2 }] : []);
+    const pip = pips(all);
+    const totalPip = cols.reduce((a, c) => a + pip[c], 0);
+    if (!cols.length) {
+      out.push({ card: basicCard('c'), qty: basicsN, roles: ['land'] });
+    } else {
+      let left = basicsN;
+      const share = cols.map(c => ({ c, x: totalPip ? pip[c] / totalPip : 1 / cols.length }));
+      share.forEach((s, i) => {
+        const q = i === share.length - 1 ? left : Math.max(1, Math.round(basicsN * s.x));
+        const qq = Math.min(q, left);
+        if (qq > 0) out.push({ card: basicCard(s.c), qty: qq, roles: ['land'] });
+        left -= qq;
+      });
+    }
+    return out;
+  }
+
+  function basicCard(c) {
+    return { name: BASICS[c], mv: 0, mana: '', type: 'Basic Land — ' + BASICS[c], oracle: `({T}: Add {${c.toUpperCase()}}.)`, pt: '', img: null, price: 0.1, set: '', rarity: 'common', edh: null, ci: c === 'c' ? '' : c, produced: c, legendary: false, buy: {}, uri: '', basic: true };
+  }
+
+  /* ── 4. estimate ───────────────────────────────────────── */
+  function estimate(deck, p) {
+    const spells = deck.spells;
+    const nCopies = spells.reduce((a, x) => a + x.qty, 0) || 1;
+    const Q = spells.reduce((a, x) => a + quality(x.card) * x.qty, 0) / nCopies;
+    const synergyCopies = spells.filter(x => x.roles.some(k => !k.startsWith('sup:'))).reduce((a, x) => a + x.qty, 0);
+    const multiCopies = spells.filter(x => x.roles.filter(k => !k.startsWith('sup:')).length >= 2).reduce((a, x) => a + x.qty, 0);
+    const S = clamp(synergyCopies / nCopies * 0.8 + multiCopies / nCopies * 0.5, 0, 1);
+    const curve = {}; spells.forEach(x => { const b = bucket(x.card.mv); curve[b] = (curve[b] || 0) + x.qty; });
+    let dist = 0; for (let b = 1; b <= 5; b++) dist += Math.abs((curve[b] || 0) / nCopies - p.speed.curve[b]);
+    const Cv = clamp(1 - dist / 1.2, 0, 1);
+    const interTarget = (p.size === 100 ? 10 : 8) * (p.speed.id === 'ctrl' ? 1.4 : p.speed.id === 'aggro' ? 0.7 : 1);
+    const inter = spells.filter(x => x.roles.includes('sup:interaction')).reduce((a, x) => a + x.qty, 0);
+    const I = clamp(inter / interTarget, 0, 1);
+    const ncol = p.colors === 'c' ? 1 : p.colors.length;
+    const fixers = deck.lands.filter(l => !l.card.basic).reduce((a, l) => a + l.qty, 0);
+    const M = clamp([1, 1, 0.94, 0.84, 0.75, 0.7][ncol] + Math.min(0.12, fixers / p.lands * 0.35), 0, 1);
+    const winKeys = p.roles.filter(r => r.kind === 'win').map(r => r.key);
+    const winCopies = spells.filter(x => winKeys.length ? x.roles.some(k => winKeys.includes(k)) : (isCreature(x.card) && quality(x.card) > 0.4)).reduce((a, x) => a + x.qty, 0);
+    const W = clamp(winCopies / (p.size === 100 ? 10 : 8), 0, 1);
+    const fill = clamp(nCopies / p.nonlandSlots, 0, 1);
+
+    const parts = [
+      { k: 'Card quality', v: Q, w: 0.30, tip: 'EDHREC popularity rank of each card (log-scaled), copy-weighted.' },
+      { k: 'Synergy', v: S, w: 0.25, tip: 'Share of spells hitting a chosen theme, win mode or tribe; cards hitting 2+ score extra.' },
+      { k: 'Curve fit', v: Cv, w: 0.15, tip: 'Distance between your mana curve and the ideal for the chosen speed.' },
+      { k: 'Interaction', v: I, w: 0.12, tip: 'Removal / counters vs. a target count for this speed.' },
+      { k: 'Mana', v: M, w: 0.10, tip: 'Color-count consistency, offset by dual/fixing lands.' },
+      { k: 'Win density', v: W, w: 0.08, tip: 'Cards that directly advance the chosen win mode.' },
+    ];
+    const raw = parts.reduce((a, x) => a + x.v * x.w, 0) * (0.6 + 0.4 * fill);
+    const pod = p.size === 100;
+    const win = pod ? clamp(25 + (raw - 0.6) * 48, 10, 45) : clamp(50 + (raw - 0.6) * 75, 25, 72);
+    return {
+      index: Math.round(raw * 100), winPct: Math.round(win), baseline: pod ? 25 : 50,
+      context: pod ? '4-player pod vs. average decks' : '1v1 Bo1 vs. an average field deck',
+      confidence: 'inferred', parts,
+    };
+  }
+
+  /* ── swap & pricing ────────────────────────────────────── */
+  function swap(deck, name, p) {
+    const i = deck.spells.findIndex(x => x.card.name === name);
+    if (i < 0 || !deck.pool) return null;
+    const out = deck.spells[i];
+    const inDeck = new Set(deck.spells.map(x => x.card.name).concat(deck.commander ? [deck.commander.card.name] : []));
+    deck.swapped = deck.swapped || [];
+    deck.swapped.push(name);
+    const banned = new Set(deck.swapped);
+    const cands = deck.pool.filter(e => !inDeck.has(e.card.name) && !banned.has(e.card.name));
+    const shared = cands.filter(e => e.roles.some(r => out.roles.includes(r) && !r.startsWith('sup:staples')));
+    const pickFrom = (shared.length ? shared : cands).sort((a, b) => b.s - a.s);
+    const rep = pickFrom[0];
+    if (!rep) return null;
+    let qty = out.qty;
+    if (!p.fmt.singleton && rep.card.legendary) qty = Math.min(qty, 2);
+    const diff = out.qty - qty;
+    deck.spells[i] = { card: rep.card, qty, roles: rep.roles, s: rep.s };
+    if (diff > 0) { // top up basics so the deck stays legal-sized
+      const basic = deck.lands.find(l => l.card.basic);
+      if (basic) basic.qty += diff;
+    }
+    deck.estimate = estimate(deck, p);
+    return rep.card;
+  }
+
+  async function cheapestPrinting(fetcher, name) {
+    const q = `!"${name.replace(/"/g, '')}" game:paper`;
+    const url = `${API}/cards/search?unique=prints&order=usd&dir=asc&q=${encodeURIComponent(q)}`;
+    const res = await fetcher(url);
+    if (!res.ok) return null;
+    const j = await res.json();
+    const withPrice = (j.data || []).map(c => ({ c, usd: parseFloat((c.prices || {}).usd || '') }))
+      .filter(x => !isNaN(x.usd)).sort((a, b) => a.usd - b.usd);
+    if (!withPrice.length) return null;
+    const best = withPrice[0];
+    return { usd: best.usd, set: (best.c.set_name || best.c.set || ''), code: (best.c.set || '').toUpperCase(), tcg: (best.c.purchase_uris || {}).tcgplayer || null, uri: best.c.scryfall_uri, printings: withPrice.length };
+  }
+
+  async function build(sel, fetcher, onProgress, delay) {
+    const p = plan(sel);
+    const g = await gather(p, fetcher, onProgress, delay);
+    const deck = assemble(p, g);
+    deck.sel = JSON.parse(JSON.stringify(sel));
+    deck.name = deckName(sel, p);
+    deck.created = Date.now();
+    return deck;
+  }
+
+  function deckName(sel, p) {
+    const id = TAX.IDENTITIES.find(x => x.id === p.colors) || {};
+    const t = (sel.themes || []).map(x => (byId(TAX.THEMES, x) || {}).n).filter(Boolean)[0] || 'Midrange';
+    const tr = (sel.tribes || [])[0];
+    return `${id.n || 'Custom'} ${tr ? tr + ' ' : ''}${t.split(' /')[0]}`;
+  }
+
+  function sortColors(s) { return 'wubrg'.split('').filter(c => s.includes(c)).join('') || (s.includes('c') ? 'c' : ''); }
+
+  const api = { MAX_DRIVERS, ping, plan, gather, assemble, estimate, build, swap, cheapestPrinting, normalize, quality, driverCount, sortColors, basicCard, API };
+  root.DM_ENGINE = api;
+  if (typeof module !== 'undefined') module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/app.js */
+/* DeckMaster — builder UI (vanilla JS, no build step)
+   Flow: 1 Setup → 2 Strategy → 3 Review deck → 4 Shop
+   The Theme guide and My builds are side panels, not steps.          */
+(function () {
+  const T = window.MTG_TAX, E = window.DM_ENGINE;
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = v => v == null || isNaN(v) ? '—' : '$' + (v >= 100 ? v.toFixed(0) : v.toFixed(2));
+  const byId = (l, id) => l.find(x => x.id === id);
+  const COLOR_HEX = { w: 'var(--mW)', u: 'var(--mU)', b: 'var(--mB)', r: 'var(--mR)', g: 'var(--mG)' };
+  const STEPS = [
+    { id: 'setup',    n: 'Setup' },
+    { id: 'strategy', n: 'Strategy' },
+    { id: 'deck',     n: 'Review' },
+    { id: 'shop',     n: 'Shop' },
+  ];
+
+  /* ── storage ─────────────────────────────────────────── */
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('dm_' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('dm_' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  };
+  const DEFAULT_SEL = { format: 'standard', colors: '', speed: 'mid', budget: 'any', themes: [], wins: [], tribes: [], era: null, setting: null, strict: false };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  /* Drafts = every build in progress or finished. One is "current". */
+  let drafts = store.get('drafts', null);
+  if (!drafts) { // migrate from v1 storage
+    const oldSel = store.get('sel', null), oldDeck = store.get('deck', null);
+    drafts = [];
+    if (oldSel || oldDeck) drafts.push({ id: uid(), sel: Object.assign({}, DEFAULT_SEL, oldSel || (oldDeck && oldDeck.sel) || {}), deck: oldDeck, step: oldDeck ? 'deck' : 'setup', updated: Date.now() });
+  }
+  let currentId = store.get('currentId', null);
+  if (!drafts.find(d => d.id === currentId)) {
+    if (!drafts.length) drafts.push({ id: uid(), sel: Object.assign({}, DEFAULT_SEL), deck: null, step: 'setup', updated: Date.now() });
+    currentId = drafts[0].id;
+  }
+  const cur = () => drafts.find(d => d.id === currentId);
+  let sel = Object.assign({}, DEFAULT_SEL, cur().sel);
+  let deck = cur().deck;
+  let step = cur().step || 'setup';
+
+  let owned = store.get('owned', {});
+  let cheap = store.get('cheap', {});
+  let basicsOwned = store.get('basicsOwned', true);
+  let tribes = T.TRIBES_FALLBACK.slice();
+  let building = false, buildError = null, lastSaved = null;
+  let online = null; // null = checking, true/false
+
+  // shared link: #s=<base64 json>  → opens as a new draft at Strategy
+  try {
+    const m = location.hash.match(/s=([^&]+)/);
+    if (m) {
+      const shared = Object.assign({}, DEFAULT_SEL, JSON.parse(decodeURIComponent(escape(atob(m[1])))));
+      const d = { id: uid(), sel: shared, deck: null, step: 'strategy', updated: Date.now() };
+      drafts.unshift(d); currentId = d.id; sel = shared; deck = null; step = 'strategy';
+      history.replaceState(null, '', location.pathname);
+    }
+  } catch (e) { /* ignore bad links */ }
+
+  function draftTitle(d) {
+    if (d.deck && d.deck.name) return d.deck.name;
+    const s = d.sel || {};
+    const bits = (s.themes || []).map(t => (byId(T.THEMES, t) || {}).n).filter(Boolean).map(n => n.split(' /')[0].split(' (')[0]);
+    if (s.tribes && s.tribes.length) bits.push(s.tribes.join('/'));
+    return bits.length ? bits.slice(0, 3).join(' + ') : 'Untitled build';
+  }
+
+  /* Autosave: every change writes the current draft. */
+  function persist() {
+    const d = cur();
+    d.sel = JSON.parse(JSON.stringify(sel));
+    d.step = step;
+    d.updated = Date.now();
+    d.deck = deck ? Object.assign({}, deck, { pool: (deck.pool || []).slice(0, 150) }) : null;
+    drafts.sort((a, b) => b.updated - a.updated);
+    let ok = store.set('drafts', drafts.slice(0, 25));
+    if (!ok) { // storage full → keep swap pools only on the current draft
+      drafts.forEach(x => { if (x.id !== currentId && x.deck) x.deck.pool = []; });
+      ok = store.set('drafts', drafts.slice(0, 25));
+    }
+    store.set('currentId', currentId);
+    lastSaved = ok ? Date.now() : null;
+    renderSaved(ok);
+  }
+  function renderSaved(ok) {
+    const el = $('#saved'); if (!el) return;
+    el.innerHTML = ok === false ? '<span style="color:var(--red)">Storage full — delete old builds in My builds</span>'
+      : `<b>✓ Autosaved</b> · ${esc(draftTitle(cur()))}`;
+    $('#tb-count').textContent = drafts.length > 1 ? `(${drafts.length})` : '';
+  }
+
+  /* ── network ─────────────────────────────────────────── */
+  const fetcher = url => fetch(url, { headers: { Accept: 'application/json' } });
+  E.ping(fetcher).then(ok => { online = ok; if (!ok) render(); });
+  fetcher('https://api.scryfall.com/catalog/creature-types').then(r => r.ok ? r.json() : null).then(j => {
+    if (j && j.data && j.data.length > 50) tribes = [...new Set(j.data)].sort();
+  }).catch(() => {});
+
+  const OFFLINE_HELP = `This page needs the Scryfall card database. If you opened it inside the Claude app, a file preview, or a downloaded copy, those block outside requests — open it from your GitHub Pages site in Safari instead. Otherwise check your connection.`;
+
+  /* ── toast ──────────────────────────────────────────── */
+  let toastT;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2000); }
+
+  /* ── mana symbols ───────────────────────────────────── */
+  function symbols(text) {
+    return esc(text).replace(/\{([^}]+)\}/g, (m, s) => `<img alt="{${s}}" src="https://svgs.scryfall.io/card-symbols/${encodeURIComponent(s.replace('/', '').toUpperCase())}.svg" onerror="this.replaceWith(document.createTextNode('{${s}}'))">`);
+  }
+  const manaHtml = m => m ? `<span class="ms">${symbols(m)}</span>` : '';
+
+  /* ── sheet ──────────────────────────────────────────── */
+  let sheetClose = null;
+  function openSheet(title, body, foot, onClose) {
+    $('#sh-title').textContent = title;
+    $('#sh-body').innerHTML = body; $('#sh-body').scrollTop = 0;
+    const f = $('#sh-foot'); f.hidden = !foot; f.innerHTML = foot || '';
+    $('#scrim').classList.add('on'); $('#sheet').classList.add('on');
+    document.body.style.overflow = 'hidden';
+    sheetClose = onClose || null;
+  }
+  function closeSheet() {
+    $('#scrim').classList.remove('on'); $('#sheet').classList.remove('on');
+    document.body.style.overflow = '';
+    const cb = sheetClose; sheetClose = null; if (cb) cb();
+  }
+  $('#scrim').onclick = closeSheet; $('#sh-close').onclick = closeSheet;
+
+  /* ════════════════ STEP NAVIGATION ════════════════ */
+  const stepIdx = id => STEPS.findIndex(s => s.id === id);
+  const canEnter = id => (id === 'deck' || id === 'shop') ? !!deck : true;
+  const isStale = () => deck && deck.sel && JSON.stringify(normSel(deck.sel)) !== JSON.stringify(normSel(sel));
+  function normSel(s) { const o = Object.assign({}, DEFAULT_SEL, s); o.colors = E.sortColors(o.colors || ''); return o; }
+
+  function goStep(id) {
+    if (!canEnter(id)) { toast('Build the deck in Step 2 first'); return; }
+    step = id; persist(); render(); window.scrollTo({ top: 0 });
+  }
+  $('#steps').onclick = e => { const b = e.target.closest('.st'); if (b) goStep(b.dataset.s); };
+
+  function renderStepper() {
+    const ci = stepIdx(step);
+    $('#steps').innerHTML = STEPS.map((s, i) => {
+      const done = i < ci || (i === 2 && deck && ci > 2) || (i === 0 && ci > 0) || (i === 1 && deck);
+      const cls = s.id === step ? 'cur' : !canEnter(s.id) ? 'lock' : done ? 'done' : '';
+      return `<button class="st ${cls}" data-s="${s.id}"><i>${cls === 'done' ? '✓' : i + 1}</i>${s.n}</button>`;
+    }).join('');
+  }
+
+  function renderActionBar() {
+    const back = $('#ab-back'), next = $('#ab-next');
+    const ci = stepIdx(step);
+    back.hidden = ci === 0;
+    back.onclick = () => goStep(STEPS[ci - 1].id);
+    next.disabled = false;
+    if (step === 'setup') { next.textContent = 'Next: Strategy →'; next.onclick = () => goStep('strategy'); }
+    if (step === 'strategy') {
+      if (building) { next.textContent = 'Building…'; next.disabled = true; next.onclick = null; }
+      else if (deck && !isStale()) { next.textContent = 'Next: Review deck →'; next.onclick = () => goStep('deck'); }
+      else { next.textContent = deck ? 'Rebuild deck →' : 'Build deck →'; next.onclick = runBuild; }
+    }
+    if (step === 'deck') { next.textContent = 'Next: Shopping list →'; next.onclick = () => goStep('shop'); }
+    if (step === 'shop') { next.textContent = 'Finish — back to My builds'; next.onclick = openBuilds; }
+  }
+
+  function stepHead(n, title, text) {
+    return `<div class="stephead"><div class="k">Step ${n} of 4</div><h2>${title}</h2><p>${text}</p></div>`;
+  }
+
+  function render() {
+    renderStepper();
+    STEPS.forEach(s => $('#step-' + s.id).hidden = s.id !== step);
+    if (step === 'setup') renderSetup();
+    if (step === 'strategy') renderStrategy();
+    if (step === 'deck') renderDeck();
+    if (step === 'shop') renderShop();
+    renderActionBar();
+    renderSaved(true);
+  }
+
+  const offlineBanner = () => online === false && !(buildError && buildError.kind === 'network') ? `<div class="banner err"><b>Can't reach the card database</b>${OFFLINE_HELP}<div class="row"><button class="btn sm" id="retry-ping">Check again</button></div></div>` : '';
+  function wireOffline() {
+    const b = $('#retry-ping'); if (b) b.onclick = () => { b.textContent = 'Checking…'; E.ping(fetcher).then(ok => { online = ok; toast(ok ? 'Connected ✓' : 'Still unreachable'); render(); }); };
+  }
+
+  /* ════════════════ STEP 1 — SETUP ════════════════ */
+  const drivers = () => E.driverCount(sel);
+  const left = () => E.MAX_DRIVERS - drivers();
+  const themeName = id => (byId(T.THEMES, id) || {}).n || id;
+  const identityName = cs => { const s = E.sortColors(cs); const x = byId(T.IDENTITIES, s); return x ? `${x.n} <span>· ${x.tier}</span>` : (s ? s.toUpperCase() : '<span>None picked — Step 2 will suggest the best fit for your themes</span>'); };
+  function change() { persist(); renderActionBar(); renderStepper(); }
+
+  function renderSetup() {
+    const fmt = byId(T.FORMATS, sel.format);
+    $('#step-setup').innerHTML = `
+      ${stepHead(1, 'Setup', 'Pick where you\'ll play and how. Colors are optional here — once you choose themes in Step 2 you\'ll get color suggestions.')}
+      ${offlineBanner()}
+      <div class="card">
+        <div class="grid2 field">
+          <div><div class="lbl">Format</div><select id="f-format">${T.FORMATS.map(f => `<option value="${f.id}"${f.id === sel.format ? ' selected' : ''}>${f.n}</option>`).join('')}</select></div>
+          <div><div class="lbl">Budget</div><select id="f-budget">${T.BUDGETS.map(b => `<option value="${b.id}"${b.id === sel.budget ? ' selected' : ''}>${b.n}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><div class="lbl">Speed</div>
+          <div class="seg" id="f-speed">${T.SPEEDS.map(s => `<button data-v="${s.id}" class="${s.id === sel.speed ? 'on' : ''}">${s.n.split(' (')[0]}</button>`).join('')}</div>
+          <p class="hint">${esc((byId(T.SPEEDS, sel.speed) || {}).n)} — sets land count and mana curve.</p>
+        </div>
+        <div class="field"><div class="lbl"><span>Colors ${fmt && fmt.cmdr ? '(exact commander identity)' : '(deck may use any of these)'}</span></div>
+          <div class="pips" id="f-pips">${'wubrgc'.split('').map(c => `<div class="pip${sel.colors.includes(c) ? ' on' : ''}" data-c="${c}">${c.toUpperCase()}</div>`).join('')}</div>
+          <div class="idname">${identityName(sel.colors)}</div>
+        </div>
+      </div>`;
+    $('#f-format').onchange = e => { sel.format = e.target.value; change(); renderSetup(); };
+    $('#f-budget').onchange = e => { sel.budget = e.target.value; change(); };
+    $('#f-speed').onclick = e => { const b = e.target.closest('button'); if (!b) return; sel.speed = b.dataset.v; change(); renderSetup(); };
+    $('#f-pips').onclick = e => {
+      const p = e.target.closest('.pip'); if (!p) return; const c = p.dataset.c;
+      if (c === 'c') sel.colors = sel.colors === 'c' ? '' : 'c';
+      else { let s = sel.colors.replace('c', ''); s = s.includes(c) ? s.replace(c, '') : s + c; sel.colors = E.sortColors(s); }
+      change(); renderSetup();
+    };
+    wireOffline();
+  }
+
+  /* ════════════════ STEP 2 — STRATEGY ════════════════ */
+  function renderStrategy() {
+    const fmt = byId(T.FORMATS, sel.format);
+    const sugg = sel.themes.length ? [
+      ...T.rankIdentities(sel.themes, 'mono').slice(0, 2),
+      ...T.rankIdentities(sel.themes, 'dual').slice(0, 3),
+      ...T.rankIdentities(sel.themes, 'tri').slice(0, 2),
+    ] : [];
+    const chipList = (arr, kind, label) => arr.map((v, i) => `<span class="chip on${kind === 'themes' && i === 0 ? ' primary' : ''}" data-rm="${kind}" data-v="${esc(v)}">${esc(label(v))}<span class="x">×</span></span>`).join('');
+    const single = (v, kind, list) => v ? `<span class="chip on" data-rm="${kind}" data-v="${esc(v)}">${esc((byId(list, v) || {}).n || v)}<span class="x">×</span></span>` : '';
+    const add = (kind, txt) => left() > 0 ? `<span class="chip add" data-add="${kind}">+ ${txt}</span>` : '';
+    const stale = isStale();
+
+    $('#step-strategy').innerHTML = `
+      ${stepHead(2, 'Strategy', 'Pick up to 10 drivers. Your first theme (★) gets the most slots — tap another theme to make it primary. Then tap <b>Build deck</b> below.')}
+      ${offlineBanner()}
+      ${buildError ? `<div class="banner err"><b>${buildError.kind === 'empty' ? 'No cards matched' : 'Build failed'}</b>${esc(buildError.kind === 'network' ? OFFLINE_HELP : buildError.message)}</div>` : ''}
+      ${deck && stale && !building ? `<div class="banner"><b>Choices changed since your last build</b>The deck in Step 3 still reflects your old picks. Tap <b>Rebuild deck</b> to update it, or go to Review to keep the old one.</div>` : ''}
+
+      <div class="card">
+        <h3>Drivers <span class="count"><b>${drivers()}</b> / ${E.MAX_DRIVERS}</span></h3>
+        <div class="driver"><div class="dl">Themes<br><small style="color:var(--muted)">★ = primary</small></div><div class="chips">${chipList(sel.themes, 'themes', themeName)}${add('themes', 'theme')}</div></div>
+        <div class="driver"><div class="dl">Win mode</div><div class="chips">${chipList(sel.wins, 'wins', v => (byId(T.WIN_MODES, v) || {}).n)}${add('wins', 'win mode')}</div></div>
+        <div class="driver"><div class="dl">Tribe</div><div class="chips">${chipList(sel.tribes, 'tribes', v => v)}${add('tribes', 'creature type')}</div></div>
+        <div class="driver"><div class="dl">Setting</div><div class="chips">${single(sel.setting, 'setting', T.SETTINGS)}${sel.setting ? '' : add('setting', 'plane / season')}</div></div>
+        <div class="driver"><div class="dl">Era</div><div class="chips">${single(sel.era, 'era', T.ERAS)}${sel.era ? '' : add('era', 'era')}</div></div>
+        ${sel.era || sel.setting ? `<label class="toggle"><span>Strict flavor — <span style="color:var(--muted)">every card must match era/setting</span></span><input type="checkbox" id="f-strict"${sel.strict ? ' checked' : ''}></label>` : ''}
+        ${left() <= 0 ? '<p class="hint">Driver limit reached — remove one to add another.</p>' : ''}
+        <p class="hint">Not sure what to pick? <a href="#" id="open-guide" style="color:var(--amber)">Browse the theme guide</a> — it's reference only; nothing changes unless you tap "Add to build".</p>
+      </div>
+
+      <div class="card">
+        <h3>Colors <span class="count"><a href="#" id="to-setup" style="color:var(--muted)">edit in Step 1</a></span></h3>
+        <div class="idname" style="margin:0 0 8px">${identityName(sel.colors)}</div>
+        ${sugg.length ? `<div class="lbl">Best fits for your themes — tap to use</div><div class="chips">${sugg.map(s => `<span class="chip sugg${E.sortColors(sel.colors) === s.id ? ' on' : ''}" data-id="${s.id}">${s.n}</span>`).join('')}</div>` : '<p class="hint" style="margin:0">Add a theme to see which colors fit it best.</p>'}
+        ${!sel.colors && sel.themes.length ? `<p class="hint">If you don't pick, <b>${esc((T.rankIdentities(sel.themes, 'dual')[0] || {}).n)}</b> will be used.</p>` : ''}
+      </div>
+
+      <div class="card summary">
+        <b>${esc((fmt || {}).n)}</b> · ${esc((byId(T.BUDGETS, sel.budget) || {}).n)} · ${esc((byId(T.SPEEDS, sel.speed) || {}).n.split(' (')[0])}
+        <div class="progress" ${building ? '' : 'hidden'}><i id="prog"></i></div>
+        <div class="status" id="status">${building ? 'Starting…' : ''}</div>
+      </div>
+      <button class="btn sm" id="share">Share this setup</button>`;
+
+    $$('#step-strategy .chip.sugg').forEach(el => el.onclick = () => { sel.colors = el.dataset.id; change(); renderStrategy(); });
+    $$('#step-strategy [data-rm]').forEach(el => el.onclick = e => {
+      const k = el.dataset.rm, v = el.dataset.v;
+      if (k === 'themes' && !e.target.classList.contains('x') && sel.themes.indexOf(v) > 0) sel.themes = [v, ...sel.themes.filter(x => x !== v)];
+      else if (Array.isArray(sel[k])) sel[k] = sel[k].filter(x => x !== v);
+      else sel[k] = null;
+      change(); renderStrategy();
+    });
+    $$('#step-strategy [data-add]').forEach(el => el.onclick = () => openPicker(el.dataset.add));
+    const st = $('#f-strict'); if (st) st.onchange = e => { sel.strict = e.target.checked; change(); };
+    $('#open-guide').onclick = e => { e.preventDefault(); openGuide(); };
+    $('#to-setup').onclick = e => { e.preventDefault(); goStep('setup'); };
+    $('#share').onclick = shareSetup;
+    wireOffline();
+  }
+
+  function affDots(a) {
+    return `<span class="aff">${'wubrg'.split('').map((c, i) => a[i] ? `<span class="dot" style="width:${5 + a[i] * 2}px;height:${5 + a[i] * 2}px;background:${COLOR_HEX[c]}"></span>` : '').join('')}</span>`;
+  }
+
+  /* picker bottom-sheet — searchable, grouped, respects the 10-driver cap */
+  function openPicker(kind) {
+    let opts, multi = true, title;
+    if (kind === 'themes') { title = 'Themes'; opts = T.THEMES.map(t => ({ id: t.id, n: t.n, sub: t.d, grp: (byId(T.FAMILIES, t.fam) || {}).n, extra: affDots(t.a) })); }
+    if (kind === 'wins') { title = 'Win mode'; opts = T.WIN_MODES.map(w => ({ id: w.id, n: w.n, sub: w.d })); }
+    if (kind === 'tribes') { title = 'Creature type'; opts = tribes.map(t => ({ id: t, n: t, grp: t[0].toUpperCase() })); }
+    if (kind === 'setting') { title = 'Plane / season'; multi = false; opts = T.SETTINGS.map(s => ({ id: s.id, n: s.n })); }
+    if (kind === 'era') { title = 'Era'; multi = false; opts = T.ERAS.map(s => ({ id: s.id, n: s.n })); }
+    const chosen = () => multi ? sel[kind] : (sel[kind] ? [sel[kind]] : []);
+    const drawList = (filter) => {
+      const f = (filter || '').toLowerCase();
+      let lastG = null, out = '';
+      let list = opts;
+      if (kind === 'wins' && sel.themes[0]) { const fav = (byId(T.THEMES, sel.themes[0]) || {}).win || []; list = opts.slice().sort((a, b) => (fav.includes(b.id) ? 1 : 0) - (fav.includes(a.id) ? 1 : 0)).map(o => fav.includes(o.id) ? Object.assign({}, o, { sub: '★ fits ' + themeName(sel.themes[0]) + ' · ' + o.sub }) : o); }
+      for (const o of list) {
+        if (f && !(o.n.toLowerCase().includes(f) || (o.sub || '').toLowerCase().includes(f))) continue;
+        if (o.grp && o.grp !== lastG && !f) { out += `<div class="grp">${esc(o.grp)}</div>`; lastG = o.grp; }
+        const on = chosen().includes(o.id);
+        const dis = !on && multi && left() <= 0;
+        out += `<div class="opt${on ? ' on' : ''}${dis ? ' dis' : ''}" data-id="${esc(o.id)}"><div class="ck">${on ? '✓' : ''}</div><div class="t">${esc(o.n)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</div>${o.extra || ''}</div>`;
+      }
+      return out || '<div class="empty">No matches.</div>';
+    };
+    const body = `<div class="search"><input class="inp" id="pk-q" type="search" placeholder="Search ${title.toLowerCase()}…" autocomplete="off"></div><div id="pk-list">${drawList('')}</div>`;
+    openSheet(title, body, `<button class="btn primary" id="pk-done">Done · ${drivers()}/${E.MAX_DRIVERS}</button>`, () => { change(); renderStrategy(); });
+    const q = $('#pk-q');
+    q.oninput = () => $('#pk-list').innerHTML = drawList(q.value);
+    $('#pk-list').onclick = e => {
+      const el = e.target.closest('.opt'); if (!el || el.classList.contains('dis')) return;
+      const id = el.dataset.id;
+      if (multi) {
+        if (sel[kind].includes(id)) sel[kind] = sel[kind].filter(x => x !== id);
+        else if (left() > 0) sel[kind] = sel[kind].concat(id);
+      } else {
+        const was = sel[kind] === id;
+        if (!was && !sel[kind] && left() <= 0) return;
+        sel[kind] = was ? null : id;
+      }
+      $('#pk-list').innerHTML = drawList(q.value);
+      $('#pk-done').textContent = `Done · ${drivers()}/${E.MAX_DRIVERS}`;
+      if (!multi) closeSheet();
+    };
+    $('#pk-done').onclick = closeSheet;
+  }
+
+  function shareSetup() {
+    const url = location.origin + location.pathname + '#s=' + btoa(unescape(encodeURIComponent(JSON.stringify(sel))));
+    if (navigator.share) navigator.share({ title: 'Deck setup', url }).catch(() => {});
+    else copy(url, 'Setup link copied');
+  }
+
+  async function runBuild() {
+    if (building) return;
+    if (!sel.themes.length && !sel.tribes.length && !sel.wins.length) { toast('Add at least one theme, win mode or tribe'); return; }
+    const s = JSON.parse(JSON.stringify(sel));
+    if (!s.colors) {
+      const top = s.themes.length ? T.rankIdentities(s.themes, 'dual')[0] : null;
+      s.colors = top ? top.id : 'wubrg';
+      sel.colors = s.colors; // make the auto-pick visible and keep it stable
+    }
+    building = true; buildError = null; renderStrategy(); renderActionBar();
+    const prog = $('#prog'), status = $('#status');
+    try {
+      const d = await E.build(s, fetcher, (i, n, label) => { prog.style.width = (i / n * 100) + '%'; status.textContent = `Searching ${label}… (${i}/${n})`; });
+      deck = d; online = true;
+      building = false; step = 'deck'; persist(); render(); window.scrollTo({ top: 0 });
+      toast('Deck built — review it here');
+    } catch (e) {
+      building = false; buildError = e;
+      if (e.kind === 'network') online = false;
+      render();
+    }
+  }
+
+  /* ════════════════ THEME GUIDE (reference, not a step) ════════════════ */
+  let guideTab = 'themes', famFilter = 'all', openTheme = null;
+  function openGuide() {
+    openSheet('Theme guide', '<div id="guide"></div>', `<button class="btn primary" id="gd-done">Close guide</button>`, () => render());
+    $('#gd-done').onclick = closeSheet;
+    drawGuide();
+  }
+  function drawGuide() {
+    const el = $('#guide'); if (!el) return;
+    const fams = [{ id: 'all', n: 'All' }].concat(T.FAMILIES);
+    const dot = (v, c) => v ? `<span class="dot" style="width:${6 + v * 5}px;height:${6 + v * 5}px;background:${COLOR_HEX[c]};opacity:${0.35 + v * 0.22}"></span>` : `<span style="color:var(--line)">·</span>`;
+    let html = `<div class="refnote"><b>Reference only.</b> Browsing here doesn't change your build. Tap <b>Add to build</b> on a theme, or a color combo, to send it to Step 2.</div>
+      <div class="seg" id="gd-tabs" style="margin-bottom:10px">${[['themes', 'Themes × colors'], ['wins', 'Win modes'], ['ids', 'Color combos']].map(([k, n]) => `<button data-g="${k}" class="${guideTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+    if (guideTab === 'themes') {
+      const rows = T.THEMES.filter(t => famFilter === 'all' || t.fam === famFilter);
+      let body = '';
+      for (const t of rows) {
+        const on = sel.themes.includes(t.id);
+        body += `<tr class="${on ? 'sel' : ''}" data-id="${t.id}"><td class="n">${on ? '✓ ' : ''}${esc(t.n)}<small>${on ? 'in your build' : esc((byId(T.FAMILIES, t.fam) || {}).n)}</small></td>${'wubrg'.split('').map((c, i) => `<td class="d">${dot(t.a[i], c)}</td>`).join('')}</tr>`;
+        if (openTheme === t.id) {
+          const ids = T.rankIdentities([t.id]);
+          const best = tier => ids.filter(x => x.tier === tier).slice(0, 3).map(x => x.n).join(', ');
+          body += `<tr><td colspan="6"><div class="mxi">${esc(t.d)}<br>
+            <b>Wins via:</b> ${t.win.map(w => esc((byId(T.WIN_MODES, w) || {}).n)).join(' · ')}
+            <div class="ids" style="margin-top:6px"><div><b>Mono:</b> ${best('mono')}</div><div><b>Dual:</b> ${best('dual')}</div><div><b>Tri:</b> ${best('tri')}</div><div><b>4–5c:</b> ${ids.filter(x => x.tier === 'four' || x.tier === 'five').slice(0, 1).map(x => x.n).join('')}</div></div>
+            <div class="row" style="margin-top:8px"><button class="btn sm" data-addtheme="${t.id}">${on ? 'Remove from build' : sel.themes.length ? '+ Add to build' : '+ Add as primary'}</button><a class="btn sm" target="_blank" rel="noopener" href="https://scryfall.com/search?order=edhrec&q=${encodeURIComponent(t.fb)}">Example cards ↗</a></div>
+          </div></td></tr>`;
+        }
+      }
+      html += `<div class="chips" id="gd-fam" style="margin-bottom:8px">${fams.map(f => `<span class="chip sugg${famFilter === f.id ? ' on' : ''}" data-f="${f.id}">${f.n}</span>`).join('')}</div>
+        <table class="mx"><thead><tr><th style="text-align:left;top:-12px">Theme — tap for details</th>${'WUBRG'.split('').map(c => `<th style="top:-12px">${c}</th>`).join('')}</tr></thead><tbody id="mx-body">${body}</tbody></table>
+        <p class="hint">Bigger dot = stronger color-pie fit. ${T.THEMES.length} themes in ${T.FAMILIES.length} families.</p>`;
+    }
+    if (guideTab === 'wins') {
+      html += T.WIN_MODES.map(w => {
+        const on = sel.wins.includes(w.id);
+        const feeders = T.THEMES.filter(t => t.win.includes(w.id)).map(t => t.n.split(' /')[0]).slice(0, 6).join(', ');
+        return `<div class="opt${on ? ' on' : ''}" data-win="${w.id}"><div class="ck">${on ? '✓' : ''}</div><div class="t">${esc(w.n)}<small>${esc(w.d)}${feeders ? ' Themes: ' + esc(feeders) + '.' : ''}</small></div></div>`;
+      }).join('') + '<p class="hint">Tap to add or remove a win mode from your build.</p>';
+    }
+    if (guideTab === 'ids') {
+      html += ['mono', 'dual', 'tri', 'four', 'five', 'colorless'].map(tier => `<div class="lbl" style="margin-top:8px">${tier}</div><div class="chips">${T.IDENTITIES.filter(x => x.tier === tier).map(x => `<span class="chip sugg${E.sortColors(sel.colors) === x.id ? ' on' : ''}" data-col="${x.id}">${x.n}</span>`).join('')}</div>`).join('')
+        + '<p class="hint">Tap a combo to use it as your deck colors.</p>';
+    }
+    el.innerHTML = html;
+    $('#gd-tabs').onclick = e => { const b = e.target.closest('button'); if (b) { guideTab = b.dataset.g; drawGuide(); } };
+    const fam = $('#gd-fam'); if (fam) fam.onclick = e => { const c = e.target.closest('.chip'); if (c) { famFilter = c.dataset.f; drawGuide(); } };
+    const mb = $('#mx-body'); if (mb) mb.onclick = e => {
+      const a = e.target.closest('[data-addtheme]');
+      if (a) {
+        const id = a.dataset.addtheme;
+        if (sel.themes.includes(id)) { sel.themes = sel.themes.filter(x => x !== id); toast('Removed from build'); }
+        else if (left() > 0) { sel.themes = sel.themes.concat(id); toast('Added to Step 2 · ' + drivers() + '/10'); }
+        else { toast('10-driver limit reached'); return; }
+        persist(); drawGuide(); return;
+      }
+      const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+      openTheme = openTheme === tr.dataset.id ? null : tr.dataset.id; drawGuide();
+    };
+    $$('#guide [data-win]').forEach(o => o.onclick = () => {
+      const id = o.dataset.win;
+      if (sel.wins.includes(id)) sel.wins = sel.wins.filter(x => x !== id);
+      else if (left() > 0) sel.wins = sel.wins.concat(id); else { toast('10-driver limit reached'); return; }
+      persist(); toast(sel.wins.includes(id) ? 'Added to Step 2' : 'Removed'); drawGuide();
+    });
+    $$('#guide [data-col]').forEach(c => c.onclick = () => { sel.colors = c.dataset.col; persist(); toast('Colors set: ' + c.textContent); drawGuide(); });
+  }
+  $('#tb-guide').onclick = openGuide;
+
+  /* ════════════════ MY BUILDS (drafts) ════════════════ */
+  function openBuilds() {
+    const stepName = d => d.deck ? (d.step === 'shop' ? 'Shopping' : 'Deck built') : `Step ${stepIdx(d.step || 'setup') + 1} — ${(STEPS.find(s => s.id === d.step) || STEPS[0]).n}`;
+    const draw = () => drafts.map(d => `<div class="draft"><div class="t${d.id === currentId ? ' cur' : ''}" data-open="${d.id}">${d.id === currentId ? '● ' : ''}${esc(draftTitle(d))}<small>${esc(stepName(d))} · ${new Date(d.updated).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${d.deck && d.deck.estimate ? ' · ' + d.deck.estimate.winPct + '% proj.' : ''}</small></div><button data-dup="${d.id}">Copy</button><button data-del="${d.id}">Delete</button></div>`).join('');
+    openSheet('My builds', `<p class="hint" style="margin-top:0">Every build autosaves on this device. Tap one to pick up where you left off.</p><div id="bl">${draw()}</div>`,
+      `<button class="btn primary" id="bl-new">+ Start a new build</button>`, () => render());
+    $('#bl').onclick = e => {
+      const o = e.target.closest('[data-open]'), du = e.target.closest('[data-dup]'), de = e.target.closest('[data-del]');
+      if (o) { loadDraft(o.dataset.open); closeSheet(); toast('Resumed: ' + draftTitle(cur())); return; }
+      if (du) { const src = drafts.find(x => x.id === du.dataset.dup); const c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.updated = Date.now(); if (c.deck) c.deck.name = (c.deck.name || '') + ' (copy)'; drafts.unshift(c); store.set('drafts', drafts); $('#bl').innerHTML = draw(); toast('Copied'); return; }
+      if (de) {
+        if (de.dataset.confirm !== '1') { de.dataset.confirm = '1'; de.textContent = 'Confirm'; de.style.borderColor = 'var(--red)'; return; }
+        drafts = drafts.filter(x => x.id !== de.dataset.del);
+        if (!drafts.length) drafts.push({ id: uid(), sel: Object.assign({}, DEFAULT_SEL), deck: null, step: 'setup', updated: Date.now() });
+        if (!drafts.find(x => x.id === currentId)) loadDraft(drafts[0].id);
+        store.set('drafts', drafts); $('#bl').innerHTML = draw(); toast('Deleted');
+      }
+    };
+    $('#bl-new').onclick = () => {
+      const d = { id: uid(), sel: Object.assign({}, DEFAULT_SEL, { format: sel.format, budget: sel.budget }), deck: null, step: 'setup', updated: Date.now() };
+      drafts.unshift(d); loadDraft(d.id); closeSheet(); toast('New build started');
+    };
+  }
+  function loadDraft(id) {
+    persist(); // save whatever is open first
+    currentId = id;
+    const d = cur();
+    sel = Object.assign({}, DEFAULT_SEL, d.sel); deck = d.deck; step = d.step || 'setup';
+    if (!canEnter(step)) step = 'strategy';
+    buildError = null;
+    persist(); render(); window.scrollTo({ top: 0 });
+  }
+  $('#tb-builds').onclick = openBuilds;
+
+  /* ════════════════ STEP 3 — REVIEW DECK ════════════════ */
+  const allEntries = () => deck ? [].concat(deck.commander ? [deck.commander] : [], deck.spells, deck.lands) : [];
+  const ownedOf = e => e.card.basic && basicsOwned ? e.qty : Math.min(owned[e.card.name] || 0, e.qty);
+  const unitPrice = c => (cheap[c.name] && cheap[c.name].usd != null) ? Math.min(cheap[c.name].usd, c.price == null ? Infinity : c.price) : c.price;
+
+  function groupOf(c) {
+    if (/Land/.test(c.type) && !/Creature/.test(c.type)) return 'Lands';
+    if (/Creature/.test(c.type)) return 'Creatures';
+    if (/Instant|Sorcery/.test(c.type)) return 'Instants & sorceries';
+    if (/Planeswalker/.test(c.type)) return 'Planeswalkers';
+    return 'Artifacts & enchantments';
+  }
+
+  function renderDeck() {
+    const el = $('#step-deck');
+    if (!deck) { el.innerHTML = `${stepHead(3, 'Review deck', '')}<div class="card empty">No deck yet — go back to Step 2 and tap <b>Build deck</b>.</div>`; return; }
+    const est = deck.estimate;
+    const total = allEntries().reduce((a, e) => a + e.qty, 0);
+    const value = allEntries().reduce((a, e) => a + (unitPrice(e.card) || 0) * e.qty, 0);
+    const own = allEntries().reduce((a, e) => a + ownedOf(e), 0);
+    const missCost = missingList().reduce((a, x) => a + (x.unit || 0) * x.need, 0);
+    const curve = {}; deck.spells.forEach(e => { const b = Math.min(Math.max(Math.round(e.card.mv) || 0, 0), 6); curve[b] = (curve[b] || 0) + e.qty; });
+    const maxC = Math.max(1, ...Object.values(curve));
+    const R = 40, C = 2 * Math.PI * R, frac = est.winPct / 100;
+    const groups = {};
+    deck.spells.forEach(e => (groups[groupOf(e.card)] = groups[groupOf(e.card)] || []).push(e));
+    groups['Lands'] = (groups['Lands'] || []).concat(deck.lands);
+    const order = ['Creatures', 'Planeswalkers', 'Instants & sorceries', 'Artifacts & enchantments', 'Lands'];
+    const roleLabel = Object.fromEntries((deck.roles || []).map(r => [r.key, r.label]));
+    const line = e => {
+      const o = ownedOf(e), cls = o >= e.qty ? 'full' : o > 0 ? 'part' : '';
+      const sub = e.roles.filter(r => roleLabel[r] && !r.startsWith('sup:staples')).map(r => roleLabel[r]).slice(0, 2).join(' · ') || e.card.type;
+      return `<div class="line" data-name="${esc(e.card.name)}"><span class="q">${e.qty}</span><span class="nm">${esc(e.card.name)} ${manaHtml(e.card.mana)}<small>${esc(sub)}</small></span><span class="pr">${money(unitPrice(e.card))}</span><button class="own ${cls}" data-own="${esc(e.card.name)}" aria-label="Owned count">${o}/${e.qty}</button></div>`;
+    };
+    el.innerHTML = `
+      ${stepHead(3, 'Review deck', 'Tap any card for its text, price and buy links. Tap the <b>0/4</b> button to mark how many you own — that feeds the shopping list in Step 4.')}
+      ${isStale() ? `<div class="banner"><b>Your Step 2 choices changed</b>This deck was built from your earlier picks.<div class="row"><button class="btn sm" id="d-rebuild">Rebuild with new choices</button><button class="btn sm" id="d-revert">Undo my changes</button></div></div>` : ''}
+      <div class="card">
+        <h2>${esc(deck.name)}</h2>
+        <div class="tagline" style="margin:2px 0 12px">${esc((byId(T.FORMATS, deck.plan.format) || {}).n)} · ${total} cards · ${esc((byId(T.SPEEDS, deck.plan.speed) || {}).n)}</div>
+        <div class="score">
+          <div class="dial"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--raised)" stroke-width="9"/><circle cx="48" cy="48" r="${R}" fill="none" stroke="var(--amber)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * frac} ${C}"/></svg>
+            <div class="v"><div><b>${est.winPct}%</b><small>PROJ. WIN</small></div></div></div>
+          <div style="font-size:13px; line-height:1.5">
+            <span class="tag">${est.confidence}</span><br>
+            ${esc(est.context)} · baseline ${est.baseline}%<br>
+            <span style="color:var(--muted)">Strength index ${est.index}/100. Modeled from the cards — not observed match data.</span>
+          </div>
+        </div>
+        <div class="bars">${est.parts.map(p => `<div class="bar" title="${esc(p.tip)}"><span>${p.k}</span><span class="t"><i style="width:${Math.round(p.v * 100)}%"></i></span><span>${Math.round(p.v * 100)}</span></div>`).join('')}</div>
+        <div class="stats">
+          <div class="stat"><b>${money(value)}</b><span>deck value</span></div>
+          <div class="stat"><b>${own}/${total}</b><span>owned</span></div>
+          <div class="stat"><b>${money(missCost)}</b><span>to complete</span></div>
+        </div>
+        <div class="curve">${[0, 1, 2, 3, 4, 5, 6].map(b => `<div><i style="height:${(curve[b] || 0) / maxC * 44}px"></i>${b === 6 ? '6+' : b}<br>${curve[b] || 0}</div>`).join('')}</div>
+        ${deck.notes && deck.notes.length ? `<details style="margin-top:10px"><summary style="font-size:12.5px;color:var(--muted)">Build notes (${deck.notes.length})</summary><ul class="notes">${deck.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
+        <details style="margin-top:6px"><summary style="font-size:12.5px;color:var(--muted)">Where to find real win-rate data</summary>
+          <p class="hint"><a style="color:var(--amber)" target="_blank" rel="noopener" href="https://www.mtggoldfish.com/metagame/${deck.plan.format === 'commander' ? 'commander' : deck.plan.format}">MTGGoldfish metagame</a> · <a style="color:var(--amber)" target="_blank" rel="noopener" href="https://edhrec.com/themes">EDHREC themes</a> · <a style="color:var(--amber)" target="_blank" rel="noopener" href="https://www.17lands.com/">17lands</a></p>
+        </details>
+      </div>
+
+      <div class="row"><button class="btn sm" id="d-copy">Copy deck list</button><button class="btn sm" id="d-allown">I own all of it</button></div>
+
+      <div class="card" id="d-list">
+        <h3>Deck list <span class="count">${own}/${total} owned</span></h3>
+        ${deck.commander ? `<div class="sec"><span>Commander</span></div>${line(deck.commander)}` : ''}
+        ${order.filter(g => groups[g] && groups[g].length).map(g => `<div class="sec"><span>${g}</span><span>${groups[g].reduce((a, e) => a + e.qty, 0)}</span></div>${groups[g].map(line).join('')}`).join('')}
+      </div>`;
+    $('#d-list').onclick = e => {
+      const ob = e.target.closest('[data-own]');
+      if (ob) { cycleOwned(findEntry(ob.dataset.own)); return; }
+      const ln = e.target.closest('.line'); if (ln) openCard(ln.dataset.name);
+    };
+    $('#d-copy').onclick = () => copy(deckText(), 'Deck list copied');
+    $('#d-allown').onclick = () => { allEntries().forEach(e => { if (!e.card.basic) owned[e.card.name] = Math.max(owned[e.card.name] || 0, e.qty); }); store.set('owned', owned); toast('Marked owned'); render(); };
+    const rb = $('#d-rebuild'); if (rb) rb.onclick = () => { step = 'strategy'; render(); runBuild(); };
+    const rv = $('#d-revert'); if (rv) rv.onclick = () => { sel = Object.assign({}, DEFAULT_SEL, deck.sel); persist(); render(); toast('Choices restored to match this deck'); };
+  }
+
+  function findEntry(name) { return allEntries().find(e => e.card.name === name); }
+  function cycleOwned(e) {
+    if (!e) return;
+    if (e.card.basic && basicsOwned) { toast('Basic lands count as owned (setting in Step 4)'); return; }
+    const c = Math.min(owned[e.card.name] || 0, e.qty);
+    owned[e.card.name] = c >= e.qty ? 0 : c + 1;
+    if (!owned[e.card.name]) delete owned[e.card.name];
+    store.set('owned', owned); render();
+  }
+
+  /* ── card detail sheet ──────────────────────────────── */
+  function openCard(name) {
+    const e = findEntry(name); if (!e) return;
+    const c = e.card;
+    const roleLabel = Object.fromEntries((deck.roles || []).map(r => [r.key, r.label]));
+    const why = e.roles.map(r => r === 'commander' ? 'Commander' : r === 'land' ? 'Mana base' : roleLabel[r]).filter(Boolean);
+    const frame = `<div class="frame" id="cd-frame" ${c.img ? 'hidden' : ''}><div class="tl"><span>${esc(c.name)}</span>${manaHtml(c.mana)}</div><div class="ty">${esc(c.type)}</div><div class="oracle">${symbols(c.oracle)}</div>${c.pt ? `<div style="text-align:right;font-weight:700;margin-top:6px">${esc(c.pt)}</div>` : ''}</div>`;
+    const ch = cheap[c.name];
+    const o = Math.min(owned[c.name] || 0, e.qty);
+    const ckUrl = `https://www.cardkingdom.com/catalog/search?search=header&filter%5Bname%5D=${encodeURIComponent(c.name.split(' // ')[0])}`;
+    const tcgUrl = (ch && ch.tcg) || c.buy.tcgplayer || `https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(c.name.split(' // ')[0])}`;
+    const body = `
+      ${c.img ? `<img class="cimg" src="${esc(c.img)}" alt="${esc(c.name)}" onerror="this.remove();document.getElementById('cd-frame').hidden=false">` : ''}
+      ${frame}
+      ${c.img ? `<details><summary style="font-size:13px;color:var(--muted)">Oracle text</summary><div class="oracle" style="margin-top:6px">${symbols(c.oracle)}</div></details>` : ''}
+      ${why.length ? `<div class="lbl" style="margin-top:10px">Why it's in the deck</div><div class="why" style="margin-top:0">${why.map(w => `<span>${esc(w)}</span>`).join('')}</div>` : ''}
+      <div class="pricebox">
+        Market (default printing): <b>${money(c.price)}</b>${c.set ? ` · ${esc(c.set)}` : ''}<br>
+        ${ch ? `Cheapest printing: <b style="color:var(--green)">${money(ch.usd)}</b> · ${esc(ch.set)} <span style="color:var(--muted)">(${ch.printings} priced printings)</span>` : (c.basic ? '' : `<button class="btn sm" id="cd-cheap" style="margin-top:6px">Find cheapest printing</button>`)}
+      </div>
+      <div class="grid2">
+        <a class="btn sm" target="_blank" rel="noopener" href="${esc(tcgUrl)}">TCGplayer${ch ? ' (cheapest)' : ''} ↗</a>
+        <a class="btn sm" target="_blank" rel="noopener" href="${esc(ckUrl)}">Card Kingdom ↗</a>
+        ${c.buy.cardmarket ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(c.buy.cardmarket)}">Cardmarket ↗</a>` : ''}
+        ${c.uri ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(c.uri)}">Scryfall ↗</a>` : ''}
+      </div>
+      ${c.basic ? '' : `<div class="stepper"><button id="cd-minus">−</button><span>I own <b id="cd-own">${o}</b> of ${e.qty}</span><button id="cd-plus">+</button></div>`}
+      ${deck.pool && deck.pool.length && deck.spells.includes(e) ? `<button class="btn sm" id="cd-swap">Swap for next-best card in the same role</button>` : ''}`;
+    openSheet(c.name, body, `<button class="btn primary" id="cd-back">← Back to deck list</button>`, () => render());
+    $('#cd-back').onclick = closeSheet;
+    const setOwn = n => { n = Math.max(0, Math.min(e.qty, n)); if (n) owned[c.name] = n; else delete owned[c.name]; store.set('owned', owned); $('#cd-own').textContent = n; };
+    if ($('#cd-minus')) { $('#cd-minus').onclick = () => setOwn((owned[c.name] || 0) - 1); $('#cd-plus').onclick = () => setOwn(Math.min(owned[c.name] || 0, e.qty) + 1); }
+    if ($('#cd-cheap')) $('#cd-cheap').onclick = async ev => {
+      ev.target.textContent = 'Checking every printing…'; ev.target.disabled = true;
+      const r = await E.cheapestPrinting(fetcher, c.name).catch(() => null);
+      if (r) { cheap[c.name] = Object.assign(r, { t: Date.now() }); store.set('cheap', cheap); openCard(name); }
+      else ev.target.textContent = 'No priced printings found';
+    };
+    if ($('#cd-swap')) $('#cd-swap').onclick = () => {
+      const rep = E.swap(deck, c.name, E.plan(deck.sel));
+      if (!rep) { toast('No alternative in that role'); return; }
+      persist(); toast(`Swapped in ${rep.name}`); sheetClose = null; openCard(rep.name);
+    };
+  }
+
+  /* ════════════════ STEP 4 — SHOP ════════════════ */
+  function missingList() {
+    return allEntries().map(e => ({ e, need: e.qty - ownedOf(e), unit: unitPrice(e.card) }))
+      .filter(x => x.need > 0).map(x => Object.assign(x, { name: x.e.card.name }));
+  }
+  const cleanName = n => n.split(' // ')[0];
+
+  function renderShop() {
+    const el = $('#step-shop');
+    if (!deck) { el.innerHTML = `${stepHead(4, 'Shop', '')}<div class="card empty">Build a deck first.</div>`; return; }
+    const miss = missingList().sort((a, b) => (b.unit || 0) * b.need - (a.unit || 0) * a.need);
+    const total = miss.reduce((a, x) => a + (x.unit || 0) * x.need, 0);
+    const unpriced = miss.filter(x => x.unit == null).length;
+    const checked = miss.filter(x => cheap[x.name]).length;
+    el.innerHTML = `
+      ${stepHead(4, 'Shop', 'Everything you don\'t own from Step 3. Find the cheapest printings, then export the list to a store. Change ownership in Step 3 and this updates.')}
+      <div class="card">
+        <h3>Missing cards <span class="count"><b>${miss.reduce((a, x) => a + x.need, 0)}</b> cards</span></h3>
+        <div class="stats" style="margin-top:0">
+          <div class="stat"><b>${money(total)}</b><span>est. total</span></div>
+          <div class="stat"><b>${miss.length}</b><span>unique</span></div>
+          <div class="stat"><b>${checked}/${miss.length}</b><span>best-price checked</span></div>
+        </div>
+        ${unpriced ? `<p class="hint">${unpriced} card(s) have no USD market price on Scryfall.</p>` : ''}
+        ${miss.length ? `<button class="btn sm" id="s-cheap" style="margin-top:10px">${checked < miss.length ? 'Find cheapest printing for each' : 'Re-check cheapest printings'}</button>
+        <div class="progress" id="s-progw" hidden><i id="s-prog"></i></div>` : ''}
+        <div id="s-list" style="margin-top:6px">
+          ${miss.length ? miss.map(x => { const ch = cheap[x.name]; const link = (ch && ch.tcg) || x.e.card.buy.tcgplayer || `https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(cleanName(x.name))}`;
+            return `<div class="line" data-name="${esc(x.name)}"><span class="q">${x.need}</span><span class="nm">${esc(x.name)}<small>${ch ? `cheapest: ${esc(ch.code)} @ ${money(ch.usd)}` : 'market price'} · ${money(x.unit)} ea</small></span><span class="pr"><b style="color:var(--text)">${money((x.unit || 0) * x.need)}</b></span><a class="own" style="display:grid;place-items:center;text-decoration:none" target="_blank" rel="noopener" href="${esc(link)}" aria-label="Buy">Buy</a></div>`; }).join('')
+            : '<div class="empty">You own everything in this deck. 🎉</div>'}
+        </div>
+      </div>
+
+      ${miss.length ? `<div class="card">
+        <h3>Export missing cards</h3>
+        <div class="grid2">
+          <button class="btn sm" id="s-tcg">TCGplayer Mass Entry ↗</button>
+          <button class="btn sm" id="s-copy">Copy list</button>
+          <button class="btn sm" id="s-csv">Download CSV</button>
+          <button class="btn sm" id="s-txt">Download .txt</button>
+        </div>
+        <p class="hint">Mass Entry opens TCGplayer with the list pre-filled so its optimizer can find the cheapest seller mix. The copied list also pastes into Card Kingdom and Cardmarket.</p>
+      </div>` : ''}
+
+      <div class="card">
+        <h3>Collection</h3>
+        <label class="toggle" style="border:none;margin:0;padding:0 0 10px"><span>Treat basic lands as owned</span><input type="checkbox" id="s-basics"${basicsOwned ? ' checked' : ''}></label>
+        <div class="grid2">
+          <button class="btn sm" id="s-import">Import collection</button>
+          <button class="btn sm" id="s-clear">Clear owned for this deck</button>
+        </div>
+        <p class="hint">Owned counts are shared across all your builds on this device — ${Object.keys(owned).length} card names tracked.</p>
+      </div>`;
+
+    $('#s-list').onclick = e => { if (e.target.closest('a')) return; const ln = e.target.closest('.line'); if (ln) openCard(ln.dataset.name); };
+    const sc = $('#s-cheap'); if (sc) sc.onclick = async () => {
+      sc.disabled = true; $('#s-progw').hidden = false;
+      const list = miss.filter(x => !x.e.card.basic);
+      for (let i = 0; i < list.length; i++) {
+        sc.textContent = `Checking ${i + 1}/${list.length}: ${list[i].name}`;
+        const r = await E.cheapestPrinting(fetcher, list[i].name).catch(() => null);
+        if (r) cheap[list[i].name] = Object.assign(r, { t: Date.now() });
+        $('#s-prog').style.width = ((i + 1) / list.length * 100) + '%';
+        await new Promise(res => setTimeout(res, 150));
+      }
+      store.set('cheap', cheap); render();
+    };
+    const plain = () => miss.map(x => `${x.need} ${cleanName(x.name)}`).join('\n');
+    if (miss.length) {
+      $('#s-tcg').onclick = () => {
+        window.open('https://www.tcgplayer.com/massentry?productline=Magic&c=' + encodeURIComponent(miss.map(x => `${x.need} ${cleanName(x.name)}`).join('||')), '_blank', 'noopener');
+        copy(plain(), 'List also copied — paste if the form is empty');
+      };
+      $('#s-copy').onclick = () => copy(plain(), 'Missing list copied');
+      $('#s-txt').onclick = () => download(`${slug(deck.name)}-missing.txt`, plain(), 'text/plain');
+      $('#s-csv').onclick = () => {
+        const q = s => `"${String(s).replace(/"/g, '""')}"`;
+        const rows = [['Card', 'Qty needed', 'Market unit USD', 'Cheapest set', 'Cheapest USD', 'Line total USD', 'Buy link']]
+          .concat(miss.map(x => { const ch = cheap[x.name] || {}; return [x.name, x.need, x.e.card.price ?? '', ch.code || '', ch.usd ?? '', ((x.unit || 0) * x.need).toFixed(2), ch.tcg || x.e.card.buy.tcgplayer || '']; }));
+        download(`${slug(deck.name)}-missing.csv`, rows.map(r => r.map(q).join(',')).join('\n'), 'text/csv');
+      };
+    }
+    $('#s-basics').onchange = e => { basicsOwned = e.target.checked; store.set('basicsOwned', basicsOwned); render(); };
+    $('#s-clear').onclick = () => { allEntries().forEach(e => delete owned[e.card.name]); store.set('owned', owned); toast('Cleared'); render(); };
+    $('#s-import').onclick = openImport;
+  }
+
+  function openImport() {
+    openSheet('Import collection', `<p class="hint" style="margin-top:0">Paste lines like <b>4 Lightning Bolt</b> or <b>2x Opt (DMU) 60</b> — Arena, MTGO, Moxfield and Archidekt exports all work. Counts merge with what's already tracked (highest wins).</p><textarea class="inp" id="im-t" placeholder="4 Faerie Mastermind\n2 Spell Pierce"></textarea>`,
+      `<button class="btn primary" id="im-go">Import</button>`, () => render());
+    $('#im-go').onclick = () => {
+      let n = 0;
+      $('#im-t').value.split(/\n/).forEach(l => {
+        const m = l.trim().match(/^(\d+)\s*x?\s+(.+?)(?:\s+\([A-Za-z0-9]+\).*|\s+\*F\*)?$/);
+        if (!m) return; const nm = m[2].trim(); owned[nm] = Math.max(owned[nm] || 0, +m[1]); n++;
+      });
+      store.set('owned', owned); closeSheet(); toast(`Imported ${n} lines`);
+    };
+  }
+
+  /* ── utilities ──────────────────────────────────────── */
+  function deckText() {
+    const out = [];
+    if (deck.commander) out.push('Commander', `1 ${deck.commander.card.name}`, '');
+    out.push('Deck');
+    deck.spells.concat(deck.lands).forEach(e => out.push(`${e.qty} ${e.card.name}`));
+    return out.join('\n');
+  }
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function copy(text, msg) {
+    const done = () => toast(msg || 'Copied');
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+    else fallbackCopy(text, done);
+  }
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); } ta.remove();
+  }
+  function download(name, text, type) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  if (!canEnter(step)) step = 'setup';
+  persist();
+  render();
+})();
+
+</script>
+</body>
+</html>
