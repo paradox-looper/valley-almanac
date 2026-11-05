@@ -1107,7 +1107,13 @@
     if (!drafts.length) drafts.push({ id: uid(), sel: Object.assign({}, DEFAULT_SEL), deck: null, step: 'setup', updated: Date.now() });
     currentId = drafts[0].id;
   }
-  const cur = () => drafts.find(d => d.id === currentId);
+  const blankDraft = () => ({ id: uid(), sel: Object.assign({}, DEFAULT_SEL), deck: null, step: 'setup', updated: Date.now() });
+  // Always returns a real draft — never undefined, even if the open one was deleted.
+  function cur() {
+    let d = drafts.find(x => x.id === currentId);
+    if (!d) { d = drafts[0] || (drafts.push(blankDraft()), drafts[0]); currentId = d.id; }
+    return d;
+  }
   let sel = Object.assign({}, DEFAULT_SEL, cur().sel);
   let deck = cur().deck;
   let step = cur().step || 'setup';
@@ -1140,6 +1146,7 @@
 
   /* Autosave: every change writes the current draft. */
   function persist() {
+    if (!drafts.find(x => x.id === currentId)) return; // open build was deleted — nothing to save into
     const d = cur();
     d.sel = JSON.parse(JSON.stringify(sel));
     d.step = step;
@@ -1269,7 +1276,7 @@
       else { next.textContent = deck ? 'Rebuild deck →' : 'Build deck →'; next.onclick = runBuild; }
     }
     if (step === 'deck') { next.textContent = 'Next: Shopping list →'; next.onclick = () => goStep('shop'); }
-    if (step === 'shop') { next.textContent = 'Finish — back to My builds'; next.onclick = openBuilds; }
+    if (step === 'shop') { next.textContent = '✓ Finish build'; next.onclick = () => { cur().done = true; persist(); openBuilds(true); }; }
   }
 
   function stepHead(n, title, text) {
@@ -1297,7 +1304,7 @@
   const left = () => E.MAX_DRIVERS - drivers();
   const themeName = id => (byId(T.THEMES, id) || {}).n || id;
   const identityName = cs => { const s = E.sortColors(cs); const x = byId(T.IDENTITIES, s); return x ? `${x.n} <span>· ${x.tier}</span>` : (s ? s.toUpperCase() : '<span>None picked — Step 2 will suggest the best fit for your themes</span>'); };
-  function change() { persist(); renderActionBar(); renderStepper(); }
+  function change() { cur().done = false; persist(); renderActionBar(); renderStepper(); }
 
   function renderSetup() {
     const fmt = byId(T.FORMATS, sel.format);
@@ -1578,30 +1585,59 @@
   $('#tb-guide').onclick = openGuide;
 
   /* ════════════════ MY BUILDS (drafts) ════════════════ */
-  function openBuilds() {
-    const stepName = d => d.deck ? (d.step === 'shop' ? 'Shopping' : 'Deck built') : `Step ${stepIdx(d.step || 'setup') + 1} — ${(STEPS.find(s => s.id === d.step) || STEPS[0]).n}`;
-    const draw = () => drafts.map(d => `<div class="draft"><div class="t${d.id === currentId ? ' cur' : ''}" data-open="${d.id}">${d.id === currentId ? '● ' : ''}${esc(draftTitle(d))}<small>${esc(stepName(d))} · ${new Date(d.updated).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${d.deck && d.deck.estimate ? ' · ' + d.deck.estimate.winPct + '% proj.' : ''}</small></div><button data-dup="${d.id}">Copy</button><button data-del="${d.id}">Delete</button></div>`).join('');
-    openSheet('My builds', `<p class="hint" style="margin-top:0">Every build autosaves on this device. Tap one to pick up where you left off.</p><div id="bl">${draw()}</div>`,
+  function openBuilds(finished) {
+    const stepName = d => d.done ? 'Finished' : d.deck ? (d.step === 'shop' ? 'Shopping' : 'Deck built') : `Step ${stepIdx(d.step || 'setup') + 1} — ${(STEPS.find(s => s.id === d.step) || STEPS[0]).n}`;
+    const when = t => new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const draw = () => drafts.map(d => `<div class="draft"><div class="t${d.id === currentId ? ' cur' : ''}" data-open="${d.id}">${d.id === currentId ? '● ' : ''}${esc(draftTitle(d))}<small>${d.id === currentId ? 'Open now · ' : ''}${esc(stepName(d))} · ${when(d.updated)}${d.deck && d.deck.estimate ? ' · ' + d.deck.estimate.winPct + '% proj.' : ''}</small></div><button data-dup="${d.id}">Copy</button><button data-del="${d.id}">Delete</button></div>`).join('');
+    const intro = finished
+      ? `<div class="banner" style="margin-top:0"><b>✓ Build saved</b>“${esc(draftTitle(cur()))}” is stored on this device. Start a new build below, or tap any build to reopen it.</div>`
+      : `<p class="hint" style="margin-top:0">Every build autosaves on this device. Tap one to reopen it.</p>`;
+    openSheet('My builds', `${intro}<div id="bl">${draw()}</div>`,
       `<button class="btn primary" id="bl-new">+ Start a new build</button>`, () => render());
+    const refresh = () => { $('#bl').innerHTML = draw(); renderSaved(true); };
     $('#bl').onclick = e => {
       const o = e.target.closest('[data-open]'), du = e.target.closest('[data-dup]'), de = e.target.closest('[data-del]');
-      if (o) { loadDraft(o.dataset.open); closeSheet(); toast('Resumed: ' + draftTitle(cur())); return; }
-      if (du) { const src = drafts.find(x => x.id === du.dataset.dup); const c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.updated = Date.now(); if (c.deck) c.deck.name = (c.deck.name || '') + ' (copy)'; drafts.unshift(c); store.set('drafts', drafts); $('#bl').innerHTML = draw(); toast('Copied'); return; }
+      if (o) {
+        if (o.dataset.open !== currentId) loadDraft(o.dataset.open);
+        closeSheet(); toast('Opened: ' + draftTitle(cur())); return;
+      }
+      if (du) {
+        persist();
+        const src = drafts.find(x => x.id === du.dataset.dup); if (!src) return;
+        const c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.updated = Date.now(); c.done = false;
+        if (c.deck) c.deck.name = (c.deck.name || '') + ' (copy)';
+        drafts.unshift(c); store.set('drafts', drafts); refresh(); toast('Copied'); return;
+      }
       if (de) {
-        if (de.dataset.confirm !== '1') { de.dataset.confirm = '1'; de.textContent = 'Confirm'; de.style.borderColor = 'var(--red)'; return; }
-        drafts = drafts.filter(x => x.id !== de.dataset.del);
-        if (!drafts.length) drafts.push({ id: uid(), sel: Object.assign({}, DEFAULT_SEL), deck: null, step: 'setup', updated: Date.now() });
-        if (!drafts.find(x => x.id === currentId)) loadDraft(drafts[0].id);
-        store.set('drafts', drafts); $('#bl').innerHTML = draw(); toast('Deleted');
+        if (de.dataset.confirm !== '1') {
+          de.dataset.confirm = '1'; de.textContent = 'Tap to confirm'; de.style.borderColor = 'var(--red)'; de.style.color = '#F2A493';
+          setTimeout(() => { if (de.isConnected && de.dataset.confirm === '1') { de.dataset.confirm = ''; de.textContent = 'Delete'; de.style.borderColor = ''; de.style.color = ''; } }, 3000);
+          return;
+        }
+        const id = de.dataset.del, wasOpen = id === currentId;
+        drafts = drafts.filter(x => x.id !== id);
+        if (wasOpen) { // switch to another build WITHOUT saving the deleted one back
+          if (!drafts.length) drafts.push(blankDraft());
+          loadDraft(drafts[0].id, false);
+        }
+        store.set('drafts', drafts); store.set('currentId', currentId);
+        refresh(); toast('Deleted');
       }
     };
     $('#bl-new').onclick = () => {
-      const d = { id: uid(), sel: Object.assign({}, DEFAULT_SEL, { format: sel.format, budget: sel.budget }), deck: null, step: 'setup', updated: Date.now() };
-      drafts.unshift(d); loadDraft(d.id); closeSheet(); toast('New build started');
+      persist();
+      const isEmpty = d => !d.deck && !(d.sel.themes || []).length && !(d.sel.wins || []).length && !(d.sel.tribes || []).length;
+      drafts = drafts.filter(d => !isEmpty(d) || d.id === currentId);
+      if (isEmpty(cur())) { step = 'setup'; persist(); closeSheet(); toast('New build — Step 1'); window.scrollTo({ top: 0 }); return; }
+      const d = blankDraft();
+      d.sel.format = sel.format; d.sel.budget = sel.budget; // carry over format & budget
+      drafts.unshift(d);
+      loadDraft(d.id, false);
+      closeSheet(); toast('New build started — Step 1');
     };
   }
-  function loadDraft(id) {
-    persist(); // save whatever is open first
+  function loadDraft(id, save = true) {
+    if (save) persist(); // save whatever is open first
     currentId = id;
     const d = cur();
     sel = Object.assign({}, DEFAULT_SEL, d.sel); deck = d.deck; step = d.step || 'setup';
@@ -1609,7 +1645,7 @@
     buildError = null;
     persist(); render(); window.scrollTo({ top: 0 });
   }
-  $('#tb-builds').onclick = openBuilds;
+  $('#tb-builds').onclick = () => openBuilds(false);
 
   /* ════════════════ STEP 3 — REVIEW DECK ════════════════ */
   const allEntries = () => deck ? [].concat(deck.commander ? [deck.commander] : [], deck.spells, deck.lands) : [];
