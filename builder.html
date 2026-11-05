@@ -1695,5 +1695,9 @@
 })();
 
 </script>
+<script>
+/* hide the EV Engine link if ev.html isn't deployed */
+fetch('ev.html',{method:'HEAD',cache:'no-store'}).then(r=>{if(!r.ok)document.querySelectorAll('a[href="ev.html"]').forEach(a=>a.remove());}).catch(()=>{});
+</script>
 </body>
 </html>
